@@ -275,3 +275,46 @@ footer {
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+/* Dashboard specific styles */
+.loading {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.error-state {
+    text-align: center;
+    padding: 20px;
+    background: #f8d7da;
+    border-radius: 8px;
+    color: #721c24;
+    grid-column: 1 / -1;
+}
+
+.error-state button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.error-state button:hover {
+    background: #c82333;
+}
+
+/* Card animations */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Responsive charts */
+.charts {
+    min-height: 400px;
+}
