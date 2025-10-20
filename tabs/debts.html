@@ -1,0 +1,119 @@
+<!-- tabs/debts.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debts Management - Sanj Healthcare</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="../css/tabs.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+  <script src="../js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="tab-container">
+    <h2>Debts Management</h2>
+
+    <!-- BANK FINANCE SECTION -->
+    <section class="debts-section">
+      <h3>Bank Finance</h3>
+      <button onclick="showBankForm()">Add Bank Loan</button>
+
+      <div id="bankForm" class="modal-form" style="display:none;">
+        <h4 id="bankFormTitle">Add Bank Loan</h4>
+        <input type="hidden" id="bankId">
+        <label>Bank Name:</label>
+        <input type="text" id="bankName">
+        <label>Principal Amount (₹):</label>
+        <input type="number" id="bankPrincipal">
+        <label>Monthly EMI (₹):</label>
+        <input type="number" id="bankEMI">
+        <label>Start Date:</label>
+        <input type="date" id="bankStartDate">
+        <label>Remarks:</label>
+        <input type="text" id="bankRemarks">
+        <button onclick="saveBankLoan()">Save</button>
+        <button onclick="hideBankForm()">Cancel</button>
+      </div>
+
+      <table id="bankTable">
+        <thead>
+          <tr>
+            <th>Bank Name</th>
+            <th>Principal</th>
+            <th>EMI</th>
+            <th>Remaining Principal</th>
+            <th>Start Date</th>
+            <th>Remarks</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Bank entries dynamically loaded here -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- INVESTORS SECTION -->
+    <section class="debts-section">
+      <h3>Investors / Private Lenders</h3>
+      <button onclick="showInvestorForm()">Add Investor</button>
+
+      <div id="investorForm" class="modal-form" style="display:none;">
+        <h4 id="investorFormTitle">Add Investor</h4>
+        <input type="hidden" id="investorId">
+        <label>Investor Name:</label>
+        <input type="text" id="investorName">
+        <label>Principal Amount (₹):</label>
+        <input type="number" id="investorPrincipal">
+        <label>ROI % per Month:</label>
+        <input type="number" id="investorROI">
+        <label>Withdraw Principal (₹, optional):</label>
+        <input type="number" id="investorWithdrawn">
+        <label>Start Date:</label>
+        <input type="date" id="investorStartDate">
+        <label>Remarks:</label>
+        <input type="text" id="investorRemarks">
+        <label>
+          <input type="checkbox" id="investorSkipROI">
+          Skip ROI this month
+        </label>
+        <button onclick="saveInvestor()">Save</button>
+        <button onclick="hideInvestorForm()">Cancel</button>
+      </div>
+
+      <table id="investorTable">
+        <thead>
+          <tr>
+            <th>Investor Name</th>
+            <th>Principal</th>
+            <th>ROI %</th>
+            <th>Monthly ROI</th>
+            <th>Withdrawn Principal</th>
+            <th>Remaining Principal</th>
+            <th>Start Date</th>
+            <th>Remarks</th>
+            <th>ROI Skipped</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Investor entries dynamically loaded here -->
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SUMMARY FLOATING CARD -->
+    <div class="summary-card" id="debtSummaryCard">
+      <h4>Monthly Debt Summary</h4>
+      <p>Total EMI: ₹<span id="totalEMI">0</span></p>
+      <p>Total ROI Paid: ₹<span id="totalROI">0</span></p>
+      <p>Total Debt Expense: ₹<span id="totalDebtExpense">0</span></p>
+      <p>Pending ROI (Skipped): ₹<span id="pendingROI">0</span></p>
+    </div>
+
+  </div>
+
+  <script src="../js/debts.js"></script>
+</body>
+</html>

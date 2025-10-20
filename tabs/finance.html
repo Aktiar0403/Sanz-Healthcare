@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanj Healthcare - Finance</title>
+<link rel="stylesheet" href="../css/tabs.css">
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+<script src="../js/firebase-config.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; }
+  h1 { text-align:center; margin-top:20px; }
+  .container { max-width: 1200px; margin: 20px auto; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
+  th { background: #2196F3; color: white; }
+  .btn { padding: 5px 10px; margin: 2px; border: none; border-radius: 5px; cursor: pointer; }
+  .add-btn { background: #4CAF50; color: white; margin: 10px 0; }
+  .edit-btn { background: #2196F3; color: white; }
+  .delete-btn { background: #f44336; color: white; }
+  #financeForm { display:none; max-width: 400px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  #financeForm input, #financeForm select { width: 100%; margin: 5px 0; padding: 5px; }
+  #formTitle { text-align:center; margin-bottom:10px; font-weight:bold; }
+  .summary { max-width: 1200px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<h1>Finance Management</h1>
+<button class="btn add-btn" onclick="showAddFinanceForm()">+ Add Finance Entry</button>
+
+<div id="financeForm">
+  <div id="formTitle">Add Finance Entry</div>
+  <input type="hidden" id="financeId">
+  <select id="type">
+    <option value="Revenue">Revenue</option>
+    <option value="Expense">Expense</option>
+  </select>
+  <select id="productSelect">
+    <option value="">--Select Product (optional)--</option>
+  </select>
+  <input type="text" id="category" placeholder="Category">
+  <input type="number" id="amount" placeholder="Amount">
+  <input type="date" id="date">
+  <input type="text" id="notes" placeholder="Notes">
+  <button class="btn add-btn" onclick="saveFinance()">Save</button>
+  <button class="btn delete-btn" onclick="hideFinanceForm()">Cancel</button>
+</div>
+
+<div class="container">
+  <table id="financeTable">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Product</th>
+        <th>Category</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="summary">
+  <h2>Summary</h2>
+  <p>Total Revenue: ₹<span id="totalRevenue">0</span></p>
+  <p>Total Expenses: ₹<span id="totalExpenses">0</span></p>
+  <p><strong>Profit: ₹<span id="profit">0</span></strong></p>
+</div>
+
+<script src="../js/finance.js"></script>
+</body>
+</html>

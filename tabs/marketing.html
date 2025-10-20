@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanj Healthcare - Marketing</title>
+<link rel="stylesheet" href="../css/tabs.css">
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js"></script>
+<script src="../js/firebase-config.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; }
+  h1 { text-align:center; margin-top:20px; }
+  .container { max-width: 1200px; margin: 20px auto; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
+  th { background: #2196F3; color: white; }
+  .btn { padding: 5px 10px; margin: 2px; border: none; border-radius: 5px; cursor: pointer; }
+  .add-btn { background: #4CAF50; color: white; margin: 10px 0; }
+  .edit-btn { background: #2196F3; color: white; }
+  .delete-btn { background: #f44336; color: white; }
+  #marketingForm { display:none; max-width: 400px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  #marketingForm input { width: 100%; margin: 5px 0; padding: 5px; }
+  #formTitle { text-align:center; margin-bottom:10px; font-weight:bold; }
+  .summary { max-width: 1200px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<h1>Marketing Management</h1>
+<button class="btn add-btn" onclick="showAddMarketingForm()">+ Add Doctor Agreement</button>
+
+<div id="marketingForm">
+  <div id="formTitle">Add Doctor Agreement</div>
+  <input type="hidden" id="marketingId">
+  <input type="text" id="doctorName" placeholder="Doctor Name">
+  <input type="number" id="targetValue" placeholder="Target Prescription Value">
+  <input type="number" id="completedValue" placeholder="Completed Prescription Value">
+  <input type="number" id="initialPayment" placeholder="Initial Payment">
+  <input type="date" id="agreementDate">
+  <input type="text" id="notes" placeholder="Notes">
+  <button class="btn add-btn" onclick="saveMarketing()">Save</button>
+  <button class="btn delete-btn" onclick="hideMarketingForm()">Cancel</button>
+</div>
+
+<div class="container">
+  <table id="marketingTable">
+    <thead>
+      <tr>
+        <th>Doctor</th>
+        <th>Target Value</th>
+        <th>Completed Value</th>
+        <th>Initial Payment</th>
+        <th>Date</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="summary">
+  <h2>Summary</h2>
+  <p>Total Target Value: ₹<span id="totalTarget">0</span></p>
+  <p>Total Completed Value: ₹<span id="totalCompleted">0</span></p>
+  <p>Total Initial Payments: ₹<span id="totalPayments">0</span></p>
+</div>
+
+<script src="../js/marketing.js"></script>
+</body>
+</html>
