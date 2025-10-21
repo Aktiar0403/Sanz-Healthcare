@@ -1,0 +1,12 @@
+{
+  "routes": [
+    {
+      "src": "/tabs/(.*)",
+      "dest": "/tabs/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
