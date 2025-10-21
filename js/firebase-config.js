@@ -1,8 +1,6 @@
+// js/firebase-config.js - FIXED VERSION (No imports)
+console.log('🚀 Loading Firebase configuration...');
 
-// js/firebase-config.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
   authDomain: "sanj-healthcare-77e02.firebaseapp.com",
@@ -13,8 +11,26 @@ const firebaseConfig = {
   measurementId: "G-HDKXN3LZ7P"
 };
 
+try {
+    // Initialize Firebase
+    if (typeof firebase !== 'undefined') {
+        if (!firebase.apps.length) {
+            console.log('🔥 Initializing Firebase...');
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase initialized successfully');
+        } else {
+            console.log('ℹ️ Firebase already initialized');
+        }
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-export { db, auth };
+        // Initialize services
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        console.log('✅ Firebase services ready');
+        
+    } else {
+        console.error('❌ Firebase SDK not loaded');
+    }
+} catch (error) {
+    console.error('❌ Firebase initialization failed:', error);
+}

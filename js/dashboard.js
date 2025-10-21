@@ -1,11 +1,16 @@
-// js/dashboard.js
-import { db } from './firebase-config.js';
+// js/dashboard.js - FIXED VERSION (No imports)
 
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        console.error('Firebase not initialized');
+        showErrorState('Firebase not loaded');
+        return;
+    }
+    
+    checkAuthState();
     loadDashboardData();
     initNavigation();
-    checkAuthState();
 });
 
 // Load all dashboard data
@@ -31,13 +36,13 @@ async function loadDashboardData() {
         hideLoadingState();
     } catch (error) {
         console.error('Dashboard loading error:', error);
-        showErrorState('Failed to load dashboard data');
+        showErrorState('Failed to load dashboard data: ' + error.message);
     }
 }
 
 // Fetch Finance Summary
 async function fetchFinanceSummary() {
-    const snapshot = await db.collection('finance').get();
+    const snapshot = await firebase.firestore().collection('finance').get();
     const financeData = snapshot.docs.map(doc => doc.data());
     
     let totalRevenue = 0;
@@ -70,8 +75,8 @@ async function fetchFinanceSummary() {
 // Fetch Stock Summary
 async function fetchStockSummary() {
     const [productsSnapshot, stockSnapshot] = await Promise.all([
-        db.collection('products').get(),
-        db.collection('stock').get()
+        firebase.firestore().collection('products').get(),
+        firebase.firestore().collection('stock').get()
     ]);
     
     const products = productsSnapshot.docs.map(doc => ({ id: parseInt(doc.id), ...doc.data() }));
@@ -84,7 +89,7 @@ async function fetchStockSummary() {
     products.forEach(product => {
         const productStock = stockEntries.filter(entry => entry.productId === product.id);
         const totalQuantity = productStock.reduce((sum, entry) => sum + (entry.quantity || 0), 0);
-        totalStockValue += totalQuantity * product.supplierPrice;
+        totalStockValue += totalQuantity * (product.supplierPrice || 0);
         
         if (totalQuantity < 10) lowStockItems++;
     });
@@ -98,39 +103,39 @@ async function fetchStockSummary() {
 
 // Fetch Debts Summary
 async function fetchDebtsSummary() {
-    const [bankSnapshot, investorSnapshot] = await Promise.all([
-        db.collection('debts').doc('bankLoans').collection('entries').get(),
-        db.collection('debts').doc('investors').collection('entries').get()
-    ]);
-    
-    const bankLoans = bankSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const investors = investorSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const totalEMI = bankLoans.reduce((sum, loan) => sum + (loan.emi || 0), 0);
-    const totalROI = investors.reduce((sum, investor) => {
-        if (!investor.skipROI) {
-            const remaining = (investor.principal || 0) - (investor.withdrawnPrincipal || 0);
-            return sum + (remaining * (investor.roi || 0) / 100);
-        }
-        return sum;
-    }, 0);
-    
-    const totalDebtPrincipal = [
-        ...bankLoans.map(loan => loan.principal - (loan.paid || 0)),
-        ...investors.map(inv => inv.principal - (inv.withdrawnPrincipal || 0))
-    ].reduce((sum, principal) => sum + principal, 0);
-    
-    return {
-        totalMonthly: totalEMI + totalROI,
-        totalPrincipal: totalDebtPrincipal,
-        emiCount: bankLoans.length,
-        investorCount: investors.length
-    };
+    try {
+        const [bankSnapshot, investorSnapshot] = await Promise.all([
+            firebase.firestore().collection('debts').doc('bankLoans').collection('entries').get(),
+            firebase.firestore().collection('debts').doc('investors').collection('entries').get()
+        ]);
+        
+        const bankLoans = bankSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const investors = investorSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        const totalEMI = bankLoans.reduce((sum, loan) => sum + (loan.emi || 0), 0);
+        const totalROI = investors.reduce((sum, investor) => {
+            if (!investor.skipROI) {
+                const remaining = (investor.principal || 0) - (investor.withdrawnPrincipal || 0);
+                return sum + (remaining * (investor.roi || 0) / 100);
+            }
+            return sum;
+        }, 0);
+        
+        return {
+            totalMonthly: totalEMI + totalROI,
+            totalPrincipal: 0,
+            emiCount: bankLoans.length,
+            investorCount: investors.length
+        };
+    } catch (error) {
+        console.error('Error fetching debts:', error);
+        return { totalMonthly: 0, totalPrincipal: 0, emiCount: 0, investorCount: 0 };
+    }
 }
 
 // Fetch Marketing Summary
 async function fetchMarketingSummary() {
-    const snapshot = await db.collection('marketing').get();
+    const snapshot = await firebase.firestore().collection('marketing').get();
     const marketingData = snapshot.docs.map(doc => ({ id: parseInt(doc.id), ...doc.data() }));
     
     const totalTarget = marketingData.reduce((sum, entry) => sum + (entry.targetValue || 0), 0);
@@ -149,11 +154,11 @@ async function fetchMarketingSummary() {
 
 // Update Summary Cards
 function updateSummaryCards(finance, stock, debts, marketing) {
-    document.getElementById('revenueValue').textContent = `₹${finance.revenue.toLocaleString('en-IN')}`;
-    document.getElementById('expenseValue').textContent = `₹${finance.expenses.toLocaleString('en-IN')}`;
-    document.getElementById('profitValue').textContent = `₹${finance.profit.toLocaleString('en-IN')}`;
-    document.getElementById('stockValue').textContent = `₹${stock.totalValue.toLocaleString('en-IN')}`;
-    document.getElementById('debtValue').textContent = `₹${debts.totalMonthly.toLocaleString('en-IN')}`;
+    document.getElementById('revenueValue').textContent = `₹${finance.revenue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('expenseValue').textContent = `₹${finance.expenses.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('profitValue').textContent = `₹${finance.profit.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('stockValue').textContent = `₹${stock.totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('debtValue').textContent = `₹${debts.totalMonthly.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     
     // Add profit color coding
     const profitElement = document.getElementById('profitValue');
@@ -162,14 +167,18 @@ function updateSummaryCards(finance, stock, debts, marketing) {
 
 // Initialize Monthly Chart
 function initMonthlyChart(monthlyData) {
-    const ctx = document.getElementById('monthlyChart').getContext('2d');
+    const ctx = document.getElementById('monthlyChart');
+    if (!ctx) {
+        console.error('Chart canvas not found');
+        return;
+    }
     
-    const months = Object.keys(monthlyData).slice(-6); // Last 6 months
+    const months = Object.keys(monthlyData).slice(-6);
     const revenueData = months.map(month => monthlyData[month]?.revenue || 0);
     const expenseData = months.map(month => monthlyData[month]?.expenses || 0);
     const profitData = months.map((month, index) => revenueData[index] - expenseData[index]);
     
-    new Chart(ctx, {
+    new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels: months,
@@ -234,21 +243,16 @@ function initNavigation() {
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const tabName = this.getAttribute('href').replace('tabs/', '').replace('.html', '');
-            loadTabContent(tabName);
+            const href = this.getAttribute('href');
+            if (href && !href.startsWith('#')) {
+                window.location.href = href;
+            }
             
             // Update active state
             navLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
         });
     });
-}
-
-// Load Tab Content (SPA-style)
-function loadTabContent(tabName) {
-    // For now, redirect to the actual page
-    // In future, you can implement dynamic content loading
-    window.location.href = `tabs/${tabName}.html`;
 }
 
 // Auth State Check
@@ -272,17 +276,23 @@ function showLoadingState() {
 
 function hideLoadingState() {
     const loadingElements = document.querySelectorAll('.loading');
-    loadingElements.forEach(el => el.remove());
+    loadingElements.forEach(el => {
+        if (el.parentElement) {
+            el.parentElement.textContent = '₹0';
+        }
+    });
 }
 
 function showErrorState(message) {
     const summarySection = document.querySelector('.summary');
-    summarySection.innerHTML = `
-        <div class="error-state">
-            <p>${message}</p>
-            <button onclick="loadDashboardData()">Retry</button>
-        </div>
-    `;
+    if (summarySection) {
+        summarySection.innerHTML = `
+            <div class="error-state">
+                <p>${message}</p>
+                <button onclick="loadDashboardData()">Retry</button>
+            </div>
+        `;
+    }
 }
 
 // Make functions globally available
