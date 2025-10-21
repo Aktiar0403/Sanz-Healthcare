@@ -1,39 +1,62 @@
-<!-- tabs/debts.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Debts Management - Sanj Healthcare</title>
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/tabs.css">
- <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <!-- FIREBASE V8 (consistent with other pages) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="../js/firebase-config.js"></script>
+  <style>
+    .debts-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .section-header h3 {
+      margin: 0;
+      color: #0d6efd;
+    }
+  </style>
 </head>
 <body>
-  <div class="tab-container">
+  <div class="debts-container">
     <h2>Debts Management</h2>
 
     <!-- BANK FINANCE SECTION -->
     <section class="debts-section">
-      <h3>Bank Finance</h3>
-      <button onclick="showBankForm()">Add Bank Loan</button>
+      <div class="section-header">
+        <h3>Bank Finance</h3>
+        <button class="btn add-btn" onclick="showBankForm()">Add Bank Loan</button>
+      </div>
 
       <div id="bankForm" class="modal-form" style="display:none;">
         <h4 id="bankFormTitle">Add Bank Loan</h4>
         <input type="hidden" id="bankId">
         <label>Bank Name:</label>
-        <input type="text" id="bankName">
+        <input type="text" id="bankName" placeholder="Enter bank name">
         <label>Principal Amount (₹):</label>
-        <input type="number" id="bankPrincipal">
+        <input type="number" id="bankPrincipal" placeholder="Enter principal amount">
         <label>Monthly EMI (₹):</label>
-        <input type="number" id="bankEMI">
+        <input type="number" id="bankEMI" placeholder="Enter monthly EMI">
         <label>Start Date:</label>
         <input type="date" id="bankStartDate">
         <label>Remarks:</label>
-        <input type="text" id="bankRemarks">
-        <button onclick="saveBankLoan()">Save</button>
-        <button onclick="hideBankForm()">Cancel</button>
+        <input type="text" id="bankRemarks" placeholder="Any remarks">
+        <div>
+          <button class="btn add-btn" onclick="saveBankLoan()">Save</button>
+          <button class="btn cancel-btn" onclick="hideBankForm()">Cancel</button>
+        </div>
       </div>
 
       <table id="bankTable">
@@ -56,30 +79,34 @@
 
     <!-- INVESTORS SECTION -->
     <section class="debts-section">
-      <h3>Investors / Private Lenders</h3>
-      <button onclick="showInvestorForm()">Add Investor</button>
+      <div class="section-header">
+        <h3>Investors / Private Lenders</h3>
+        <button class="btn add-btn" onclick="showInvestorForm()">Add Investor</button>
+      </div>
 
       <div id="investorForm" class="modal-form" style="display:none;">
         <h4 id="investorFormTitle">Add Investor</h4>
         <input type="hidden" id="investorId">
         <label>Investor Name:</label>
-        <input type="text" id="investorName">
+        <input type="text" id="investorName" placeholder="Enter investor name">
         <label>Principal Amount (₹):</label>
-        <input type="number" id="investorPrincipal">
+        <input type="number" id="investorPrincipal" placeholder="Enter principal amount">
         <label>ROI % per Month:</label>
-        <input type="number" id="investorROI">
-        <label>Withdraw Principal (₹, optional):</label>
-        <input type="number" id="investorWithdrawn">
+        <input type="number" id="investorROI" placeholder="Enter ROI percentage" step="0.1">
+        <label>Withdrawn Principal (₹, optional):</label>
+        <input type="number" id="investorWithdrawn" placeholder="Enter withdrawn amount" value="0">
         <label>Start Date:</label>
         <input type="date" id="investorStartDate">
         <label>Remarks:</label>
-        <input type="text" id="investorRemarks">
-        <label>
-          <input type="checkbox" id="investorSkipROI">
+        <input type="text" id="investorRemarks" placeholder="Any remarks">
+        <label style="display: flex; align-items: center; margin: 15px 0;">
+          <input type="checkbox" id="investorSkipROI" style="width: auto; margin-right: 8px;">
           Skip ROI this month
         </label>
-        <button onclick="saveInvestor()">Save</button>
-        <button onclick="hideInvestorForm()">Cancel</button>
+        <div>
+          <button class="btn add-btn" onclick="saveInvestor()">Save</button>
+          <button class="btn cancel-btn" onclick="hideInvestorForm()">Cancel</button>
+        </div>
       </div>
 
       <table id="investorTable">
