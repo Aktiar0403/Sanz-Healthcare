@@ -6,63 +6,117 @@
   <title>Sanj Healthcare - Reports</title>
   <link rel="stylesheet" href="../css/style.css">
   <link rel="stylesheet" href="../css/tabs.css">
+  
+  <!-- Load Firebase FIRST -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  
+  <!-- Load Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
+  <style>
+    .reports-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px 0;
+      height: 400px;
+    }
+    .table-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin: 20px 0;
+      overflow-x: auto;
+    }
+  </style>
 </head>
 <body>
-  <h1>Reports Dashboard</h1>
+  <div class="reports-container">
+    <h1>📊 Reports Dashboard</h1>
 
-  <!-- Revenue vs Expenses -->
-  <div class="report-section">
-    <h2>Revenue vs Expenses</h2>
-    <canvas id="revenueChart" height="100"></canvas>
+    <!-- Revenue vs Expenses -->
+    <div class="report-section">
+      <h2>Revenue vs Expenses</h2>
+      <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Profit Chart -->
+    <div class="report-section">
+      <h2>Profit Analysis</h2>
+      <div class="chart-container">
+        <canvas id="profitChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Stock Levels -->
+    <div class="report-section">
+      <h2>Stock Levels</h2>
+      <div class="chart-container">
+        <canvas id="stockChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Debts Summary Table -->
+    <div class="report-section">
+      <h2>Debts Summary</h2>
+      <div class="table-container">
+        <table id="debtsSummaryTable">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Principal</th>
+              <th>Monthly Payment</th>
+              <th>Paid Amount</th>
+              <th>Remaining</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5" style="text-align: center;">Loading debt data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Marketing Summary Table -->
+    <div class="report-section">
+      <h2>Marketing Performance</h2>
+      <div class="table-container">
+        <table id="marketingSummaryTable">
+          <thead>
+            <tr>
+              <th>Doctor Name</th>
+              <th>Target Value</th>
+              <th>Completed Value</th>
+              <th>Initial Payment</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5" style="text-align: center;">Loading marketing data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Profit Chart -->
-  <div class="report-section">
-    <h2>Profit</h2>
-    <canvas id="profitChart" height="100"></canvas>
-  </div>
-
-  <!-- Stock Levels -->
-  <div class="report-section">
-    <h2>Stock Levels</h2>
-    <canvas id="stockChart" height="100"></canvas>
-  </div>
-
-  <!-- Debts Summary Table -->
-  <div class="report-section">
-    <h2>Debts Summary</h2>
-    <table id="debtsSummaryTable">
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Principal</th>
-          <th>Monthly ROI/EMI</th>
-          <th>Paid Amount</th>
-          <th>Remaining Principal</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <!-- Marketing Summary Table -->
-  <div class="report-section">
-    <h2>Marketing Summary</h2>
-    <table id="marketingSummaryTable">
-      <thead>
-        <tr>
-          <th>Doctor Name</th>
-          <th>Target Value</th>
-          <th>Paid</th>
-          <th>Completed Prescriptions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-<script src="../js/firebase-config.js"></script>
+  <!-- Scripts -->
+  <script src="../js/firebase-config.js"></script>
   <script src="../js/reports.js"></script>
 </body>
 </html>
