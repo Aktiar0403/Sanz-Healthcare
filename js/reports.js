@@ -1,4 +1,7 @@
-// js/reports.js - FIXED VERSION (No imports)
+// js/reports.js - FIXED CHART VERSION
+let revenueChart = null;
+let profitChart = null;
+let stockChart = null;
 
 // DOM elements
 const revenueCtx = document.getElementById('revenueChart');
@@ -41,6 +44,11 @@ async function loadReports() {
 function generateRevenueExpenseChart(financeData) {
     if (!revenueCtx) return;
     
+    // Destroy existing chart
+    if (revenueChart) {
+        revenueChart.destroy();
+    }
+    
     const monthlyData = {};
 
     financeData.forEach(item => {
@@ -54,7 +62,7 @@ function generateRevenueExpenseChart(financeData) {
     const revenue = labels.map(m => monthlyData[m].revenue);
     const expense = labels.map(m => monthlyData[m].expense);
 
-    new Chart(revenueCtx.getContext('2d'), {
+    revenueChart = new Chart(revenueCtx.getContext('2d'), {
         type: 'line',
         data: {
             labels,
@@ -71,6 +79,11 @@ function generateRevenueExpenseChart(financeData) {
 function generateProfitChart(financeData) {
     if (!profitCtx) return;
     
+    // Destroy existing chart
+    if (profitChart) {
+        profitChart.destroy();
+    }
+    
     const monthlyData = {};
     financeData.forEach(item => {
         const month = new Date(item.date).toLocaleString('default', { month: 'short' });
@@ -82,7 +95,7 @@ function generateProfitChart(financeData) {
     const labels = Object.keys(monthlyData);
     const profit = labels.map(m => monthlyData[m].revenue - monthlyData[m].expense);
 
-    new Chart(profitCtx.getContext('2d'), {
+    profitChart = new Chart(profitCtx.getContext('2d'), {
         type: 'bar',
         data: { labels, datasets: [{ label: 'Profit', data: profit, backgroundColor: 'blue' }] },
         options: { responsive: true }
@@ -93,10 +106,15 @@ function generateProfitChart(financeData) {
 function generateStockChart(stockData) {
     if (!stockCtx) return;
     
+    // Destroy existing chart
+    if (stockChart) {
+        stockChart.destroy();
+    }
+    
     const labels = stockData.map(s => s.productName || 'Unknown');
     const quantities = stockData.map(s => s.quantity || 0);
 
-    new Chart(stockCtx.getContext('2d'), {
+    stockChart = new Chart(stockCtx.getContext('2d'), {
         type: 'bar',
         data: { 
             labels, 
@@ -142,6 +160,13 @@ function populateMarketingTable(marketingData) {
         marketingTableBody.innerHTML += row;
     });
 }
+
+// Clean up charts when leaving page
+window.addEventListener('beforeunload', function() {
+    if (revenueChart) revenueChart.destroy();
+    if (profitChart) profitChart.destroy();
+    if (stockChart) stockChart.destroy();
+});
 
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {

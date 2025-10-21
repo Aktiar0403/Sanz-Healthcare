@@ -1,24 +1,6 @@
-// js/dashboard.js - FIXED VERSION (No imports)
-// js/dashboard.js - Add this at the top
-function checkFirebase() {
-    if (typeof firebase === 'undefined' || !firebase.apps.length) {
-        console.error('Firebase not available');
-        return false;
-    }
-    return true;
-}
+// js/dashboard.js - FIXED CHART VERSION
+let monthlyChart = null; // Store chart instance
 
-// Then modify your DOMContentLoaded:
-document.addEventListener('DOMContentLoaded', function() {
-    if (!checkFirebase()) {
-        showErrorState('Firebase not loaded. Please refresh.');
-        return;
-    }
-    
-    checkAuthState();
-    loadDashboardData();
-    initNavigation();
-});
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof firebase === 'undefined' || !firebase.apps.length) {
@@ -184,7 +166,7 @@ function updateSummaryCards(finance, stock, debts, marketing) {
     profitElement.style.color = finance.profit >= 0 ? '#28a745' : '#dc3545';
 }
 
-// Initialize Monthly Chart
+// Initialize Monthly Chart - FIXED VERSION
 function initMonthlyChart(monthlyData) {
     const ctx = document.getElementById('monthlyChart');
     if (!ctx) {
@@ -192,12 +174,18 @@ function initMonthlyChart(monthlyData) {
         return;
     }
     
+    // Destroy existing chart if it exists
+    if (monthlyChart) {
+        monthlyChart.destroy();
+    }
+    
     const months = Object.keys(monthlyData).slice(-6);
     const revenueData = months.map(month => monthlyData[month]?.revenue || 0);
     const expenseData = months.map(month => monthlyData[month]?.expenses || 0);
     const profitData = months.map((month, index) => revenueData[index] - expenseData[index]);
     
-    new Chart(ctx.getContext('2d'), {
+    // Create new chart
+    monthlyChart = new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels: months,
@@ -313,6 +301,13 @@ function showErrorState(message) {
         `;
     }
 }
+
+// Clean up chart when leaving page
+window.addEventListener('beforeunload', function() {
+    if (monthlyChart) {
+        monthlyChart.destroy();
+    }
+});
 
 // Make functions globally available
 window.loadDashboardData = loadDashboardData;
