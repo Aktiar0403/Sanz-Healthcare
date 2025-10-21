@@ -1,81 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sanj Healthcare Dashboard</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanz Healthcare - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <link rel="stylesheet" href="css/components.css">
+    
+    <!-- Firebase & Chart.js -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
-  <!-- Header -->
-  <header>
-    <div class="container header-container">
-      <div class="logo">🩺 Sanj Healthcare Pvt. Ltd.</div>
-      <div class="user-info">
-        <span id="userName">Welcome, Admin</span>
-        <button onclick="logout()">Logout</button>
-      </div>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="brand">
+            <div class="brand-logo">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+                </svg>
+                Sanz Healthcare
+            </div>
+        </div>
+        
+        <nav class="nav">
+            <a href="index.html" class="nav-item active">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                Dashboard
+            </a>
+            
+            <a href="tabs/stock.html" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                Stock Management
+            </a>
+            
+            <a href="tabs/products.html" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                </svg>
+                Products
+            </a>
+            
+            <a href="tabs/finance.html" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Finance
+            </a>
+            
+            <a href="tabs/marketing.html" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+                </svg>
+                Marketing
+            </a>
+            
+            <a href="tabs/debts.html" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                </svg>
+                Debts
+            </a>
+            
+            <a href="tabs/reports.html" class="nav-item">
+                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                Reports
+            </a>
+        </nav>
     </div>
-  </header>
 
-  <!-- Top Navigation -->
-  <nav class="top-nav container">
-    <a href="tabs/products.html">Products</a>
-    <a href="tabs/stock.html">Stock</a>
-    <a href="tabs/finance.html">Finance</a>
-    <a href="tabs/marketing.html">Marketing</a>
-    <a href="tabs/debts.html">Debts</a>
-    <a href="tabs/reports.html">Reports</a>
-  </nav>
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="page-title">Dashboard Overview</h1>
+                <div class="header-actions">
+                    <button class="btn btn-primary" id="addProductBtn">
+                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add Product
+                    </button>
+                </div>
+            </div>
+        </header>
 
-  <!-- Main Dashboard Content -->
-  <main class="container dashboard">
-    <section class="summary">
-      <div class="card">
-        <h3>Total Revenue</h3>
-        <p id="revenueValue">₹0</p>
-      </div>
-      <div class="card">
-        <h3>Total Expenses</h3>
-        <p id="expenseValue">₹0</p>
-      </div>
-      <div class="card">
-        <h3>Net Profit</h3>
-        <p id="profitValue">₹0</p>
-      </div>
-      <div class="card">
-        <h3>Total Stock Value</h3>
-        <p id="stockValue">₹0</p>
-      </div>
-      <div class="card">
-        <h3>Total Debts</h3>
-        <p id="debtValue">₹0</p>
-      </div>
-    </section>
+        <main class="container p-6">
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="metricsGrid">
+                <div class="metric-card">
+                    <div class="metric-value">1,248</div>
+                    <div class="metric-label">Total Products</div>
+                    <div class="metric-trend trend-positive">
+                        <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        +12% from last month
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value">42</div>
+                    <div class="metric-label">Low Stock Items</div>
+                    <div class="metric-trend trend-negative">
+                        <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        +5% from last week
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value">₹94,258</div>
+                    <div class="metric-label">Total Revenue</div>
+                    <div class="metric-trend trend-positive">
+                        <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        +18% from last month
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-value">₹21,580</div>
+                    <div class="metric-label">Total Debt</div>
+                    <div class="metric-trend trend-negative">
+                        <svg style="width: 12px; height: 12px;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        -8% from last week
+                    </div>
+                </div>
+            </div>
 
-    <!-- Chart Area -->
-    <section class="charts">
-      <h2>Monthly Trends</h2>
-      <canvas id="monthlyChart"></canvas>
-    </section>
-  </main>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Revenue Overview (INR)</h3>
+                        <select class="form-input form-select text-sm" id="revenueTimeRange" style="width: auto;">
+                            <option value="7">Last 7 days</option>
+                            <option value="30" selected>Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                    </div>
+                    <canvas id="revenueChart" height="300"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Product Performance</h3>
+                        <select class="form-input form-select text-sm" id="productView" style="width: auto;">
+                            <option value="top">Top Products</option>
+                            <option value="category">By Category</option>
+                        </select>
+                    </div>
+                    <canvas id="performanceChart" height="300"></canvas>
+                </div>
+            </div>
 
-  <!-- Footer -->
-  <footer>
-    <p>© 2025 Sanj Healthcare Pvt. Ltd. | Internal Management Dashboard</p>
-  </footer>
+            <!-- Recent Activity & Quick Stats -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+                <!-- Recent Activity -->
+                <div class="card col-span-2">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold">Recent Activity</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="data-table">
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentActivityTable">
+                                        <!-- Dynamic content will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-  <!-- Scripts -->
-  <script src="js/firebase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="js/reports.js"></script>
-  <script src="js/navigation.js"></script>
-  <script src="js/dashboard.js"></script>
+                <!-- Quick Stats -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="text-lg font-semibold">Quick Stats</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="space-y-4" id="quickStats">
+                            <!-- Dynamic content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Low Stock Alert -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold">Low Stock Alerts</h3>
+                        <span class="badge badge-error" id="lowStockCount">0 items need attention</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="data-table">
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Current Stock</th>
+                                        <th>Threshold</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lowStockTable">
+                                    <!-- Dynamic content will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="quickActionBtn">
+        <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+    </button>
+
+    <!-- Firebase Configuration -->
+    <script src="js/firebase-config.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="js/dashboard.js"></script>
+    
+    <script>
+        // Simple navigation active state
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            navItems.forEach(item => {
+                const href = item.getAttribute('href');
+                if (href === currentPage || (currentPage === '' && href === 'index.html')) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

@@ -1,313 +1,391 @@
-// js/dashboard.js - FIXED CHART VERSION
-let monthlyChart = null; // Store chart instance
+// js/dashboard.js - Dashboard specific functionality
 
-// Initialize dashboard when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof firebase === 'undefined' || !firebase.apps.length) {
-        console.error('Firebase not initialized');
-        showErrorState('Firebase not loaded');
-        return;
+class Dashboard {
+    constructor() {
+        this.db = window.db;
+        this.auth = window.auth;
+        this.revenueChart = null;
+        this.performanceChart = null;
+        
+        this.init();
     }
-    
-    checkAuthState();
-    loadDashboardData();
-    initNavigation();
-});
 
-// Load all dashboard data
-async function loadDashboardData() {
-    try {
-        showLoadingState();
-        
-        const [
-            financeSummary, 
-            stockSummary, 
-            debtsSummary,
-            marketingSummary
-        ] = await Promise.all([
-            fetchFinanceSummary(),
-            fetchStockSummary(),
-            fetchDebtsSummary(),
-            fetchMarketingSummary()
-        ]);
-
-        updateSummaryCards(financeSummary, stockSummary, debtsSummary, marketingSummary);
-        initMonthlyChart(financeSummary.monthlyData);
-        
-        hideLoadingState();
-    } catch (error) {
-        console.error('Dashboard loading error:', error);
-        showErrorState('Failed to load dashboard data: ' + error.message);
+    init() {
+        this.initializeCharts();
+        this.loadDashboardData();
+        this.setupEventListeners();
     }
-}
 
-// Fetch Finance Summary
-async function fetchFinanceSummary() {
-    const snapshot = await firebase.firestore().collection('finance').get();
-    const financeData = snapshot.docs.map(doc => doc.data());
-    
-    let totalRevenue = 0;
-    let totalExpenses = 0;
-    const monthlyData = {};
-    
-    financeData.forEach(entry => {
-        const month = new Date(entry.date).toLocaleString('default', { month: 'short', year: 'numeric' });
-        if (!monthlyData[month]) {
-            monthlyData[month] = { revenue: 0, expenses: 0 };
-        }
-        
-        if (entry.type === 'Revenue') {
-            totalRevenue += entry.amount;
-            monthlyData[month].revenue += entry.amount;
-        } else if (entry.type === 'Expense') {
-            totalExpenses += entry.amount;
-            monthlyData[month].expenses += entry.amount;
-        }
-    });
-    
-    return {
-        revenue: totalRevenue,
-        expenses: totalExpenses,
-        profit: totalRevenue - totalExpenses,
-        monthlyData: monthlyData
-    };
-}
-
-// Fetch Stock Summary
-async function fetchStockSummary() {
-    const [productsSnapshot, stockSnapshot] = await Promise.all([
-        firebase.firestore().collection('products').get(),
-        firebase.firestore().collection('stock').get()
-    ]);
-    
-    const products = productsSnapshot.docs.map(doc => ({ id: parseInt(doc.id), ...doc.data() }));
-    const stockEntries = stockSnapshot.docs.map(doc => ({ id: parseInt(doc.id), ...doc.data() }));
-    
-    let totalStockValue = 0;
-    let lowStockItems = 0;
-    
-    // Calculate total stock value
-    products.forEach(product => {
-        const productStock = stockEntries.filter(entry => entry.productId === product.id);
-        const totalQuantity = productStock.reduce((sum, entry) => sum + (entry.quantity || 0), 0);
-        totalStockValue += totalQuantity * (product.supplierPrice || 0);
-        
-        if (totalQuantity < 10) lowStockItems++;
-    });
-    
-    return {
-        totalValue: totalStockValue,
-        lowStockCount: lowStockItems,
-        totalProducts: products.length
-    };
-}
-
-// Fetch Debts Summary
-async function fetchDebtsSummary() {
-    try {
-        const [bankSnapshot, investorSnapshot] = await Promise.all([
-            firebase.firestore().collection('debts').doc('bankLoans').collection('entries').get(),
-            firebase.firestore().collection('debts').doc('investors').collection('entries').get()
-        ]);
-        
-        const bankLoans = bankSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const investors = investorSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        const totalEMI = bankLoans.reduce((sum, loan) => sum + (loan.emi || 0), 0);
-        const totalROI = investors.reduce((sum, investor) => {
-            if (!investor.skipROI) {
-                const remaining = (investor.principal || 0) - (investor.withdrawnPrincipal || 0);
-                return sum + (remaining * (investor.roi || 0) / 100);
-            }
-            return sum;
-        }, 0);
-        
-        return {
-            totalMonthly: totalEMI + totalROI,
-            totalPrincipal: 0,
-            emiCount: bankLoans.length,
-            investorCount: investors.length
-        };
-    } catch (error) {
-        console.error('Error fetching debts:', error);
-        return { totalMonthly: 0, totalPrincipal: 0, emiCount: 0, investorCount: 0 };
-    }
-}
-
-// Fetch Marketing Summary
-async function fetchMarketingSummary() {
-    const snapshot = await firebase.firestore().collection('marketing').get();
-    const marketingData = snapshot.docs.map(doc => ({ id: parseInt(doc.id), ...doc.data() }));
-    
-    const totalTarget = marketingData.reduce((sum, entry) => sum + (entry.targetValue || 0), 0);
-    const totalCompleted = marketingData.reduce((sum, entry) => sum + (entry.completedValue || 0), 0);
-    const totalPayments = marketingData.reduce((sum, entry) => sum + (entry.initialPayment || 0), 0);
-    const completionRate = totalTarget > 0 ? (totalCompleted / totalTarget * 100) : 0;
-    
-    return {
-        totalTarget,
-        totalCompleted,
-        totalPayments,
-        completionRate,
-        agreementCount: marketingData.length
-    };
-}
-
-// Update Summary Cards
-function updateSummaryCards(finance, stock, debts, marketing) {
-    document.getElementById('revenueValue').textContent = `₹${finance.revenue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    document.getElementById('expenseValue').textContent = `₹${finance.expenses.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    document.getElementById('profitValue').textContent = `₹${finance.profit.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    document.getElementById('stockValue').textContent = `₹${stock.totalValue.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    document.getElementById('debtValue').textContent = `₹${debts.totalMonthly.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    
-    // Add profit color coding
-    const profitElement = document.getElementById('profitValue');
-    profitElement.style.color = finance.profit >= 0 ? '#28a745' : '#dc3545';
-}
-
-// Initialize Monthly Chart - FIXED VERSION
-function initMonthlyChart(monthlyData) {
-    const ctx = document.getElementById('monthlyChart');
-    if (!ctx) {
-        console.error('Chart canvas not found');
-        return;
-    }
-    
-    // Destroy existing chart if it exists
-    if (monthlyChart) {
-        monthlyChart.destroy();
-    }
-    
-    const months = Object.keys(monthlyData).slice(-6);
-    const revenueData = months.map(month => monthlyData[month]?.revenue || 0);
-    const expenseData = months.map(month => monthlyData[month]?.expenses || 0);
-    const profitData = months.map((month, index) => revenueData[index] - expenseData[index]);
-    
-    // Create new chart
-    monthlyChart = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: months,
-            datasets: [
-                {
-                    label: 'Revenue',
-                    data: revenueData,
-                    backgroundColor: 'rgba(40, 167, 69, 0.7)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Expenses',
-                    data: expenseData,
-                    backgroundColor: 'rgba(220, 53, 69, 0.7)',
-                    borderColor: 'rgba(220, 53, 69, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Profit',
-                    data: profitData,
-                    type: 'line',
-                    borderColor: 'rgba(0, 123, 255, 1)',
-                    borderWidth: 2,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Monthly Financial Performance'
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ₹${context.raw.toLocaleString('en-IN')}`;
-                        }
-                    }
-                }
+    initializeCharts() {
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        this.revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Revenue (INR)',
+                    data: [65000, 72000, 81000, 78000, 88500, 94258, 89000],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₹' + value.toLocaleString('en-IN');
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Revenue: ₹${context.parsed.y.toLocaleString('en-IN')}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString('en-IN');
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-}
-
-// Navigation Handling
-function initNavigation() {
-    const navLinks = document.querySelectorAll('.top-nav a');
-    
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const href = this.getAttribute('href');
-            if (href && !href.startsWith('#')) {
-                window.location.href = href;
-            }
-            
-            // Update active state
-            navLinks.forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
         });
-    });
-}
 
-// Auth State Check
-function checkAuthState() {
-    firebase.auth().onAuthStateChanged(user => {
-        if (user) {
-            document.getElementById('userName').textContent = `Welcome, ${user.email}`;
-        } else {
-            window.location.href = 'login.html';
+        // Performance Chart
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        this.performanceChart = new Chart(performanceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Paracetamol', 'Vitamin C', 'Amoxicillin', 'Insulin', 'Bandages'],
+                datasets: [{
+                    label: 'Units Sold',
+                    data: [1200, 800, 650, 450, 300],
+                    backgroundColor: [
+                        'rgba(37, 99, 235, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(139, 92, 246, 0.8)'
+                    ],
+                    borderColor: [
+                        '#2563eb',
+                        '#10b981',
+                        '#f59e0b',
+                        '#ef4444',
+                        '#8b5cf6'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    async loadDashboardData() {
+        try {
+            // Load recent activity
+            await this.loadRecentActivity();
+            
+            // Load quick stats
+            await this.loadQuickStats();
+            
+            // Load low stock alerts
+            await this.loadLowStockAlerts();
+            
+            // Update metrics from Firestore (if data exists)
+            await this.updateMetricsFromFirestore();
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
         }
-    });
-}
+    }
 
-// Loading States
-function showLoadingState() {
-    const cards = document.querySelectorAll('.card p');
-    cards.forEach(card => {
-        card.innerHTML = '<span class="loading">Loading...</span>';
-    });
-}
+    async loadRecentActivity() {
+        // Mock data - replace with Firestore data
+        const activities = [
+            {
+                product: 'Paracetamol 500mg',
+                code: 'MED-001',
+                type: 'Stock Update',
+                date: 'Just now',
+                status: 'completed',
+                icon: 'package'
+            },
+            {
+                product: 'Vitamin C 1000mg',
+                code: 'MED-045',
+                type: 'Sale',
+                date: '2 hours ago',
+                status: 'completed',
+                icon: 'check'
+            },
+            {
+                product: 'Amoxicillin 250mg',
+                code: 'MED-128',
+                type: 'Low Stock Alert',
+                date: '5 hours ago',
+                status: 'pending',
+                icon: 'alert'
+            },
+            {
+                product: 'Insulin Syringes',
+                code: 'MED-256',
+                type: 'Expiry Alert',
+                date: '1 day ago',
+                status: 'urgent',
+                icon: 'warning'
+            }
+        ];
 
-function hideLoadingState() {
-    const loadingElements = document.querySelectorAll('.loading');
-    loadingElements.forEach(el => {
-        if (el.parentElement) {
-            el.parentElement.textContent = '₹0';
-        }
-    });
-}
+        const tableBody = document.getElementById('recentActivityTable');
+        tableBody.innerHTML = activities.map(activity => `
+            <tr>
+                <td>
+                    <div class="flex items-center gap-3">
+                        <div style="width: 32px; height: 32px; background: ${this.getStatusColor(activity.status, true)}; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                            ${this.getStatusIcon(activity.icon)}
+                        </div>
+                        <div>
+                            <div class="font-medium">${activity.product}</div>
+                            <div class="text-xs text-secondary">${activity.code}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${activity.type}</td>
+                <td>${activity.date}</td>
+                <td>
+                    <span class="badge ${this.getStatusBadge(activity.status)}">${this.getStatusText(activity.status)}</span>
+                </td>
+                <td>
+                    <button class="btn btn-ghost btn-sm">View</button>
+                </td>
+            </tr>
+        `).join('');
+    }
 
-function showErrorState(message) {
-    const summarySection = document.querySelector('.summary');
-    if (summarySection) {
-        summarySection.innerHTML = `
-            <div class="error-state">
-                <p>${message}</p>
-                <button onclick="loadDashboardData()">Retry</button>
+    async loadQuickStats() {
+        const stats = [
+            { label: "Today's Sales", value: "₹9,842", trend: "up", icon: "trending-up" },
+            { label: "Pending Orders", value: "12", trend: "neutral", icon: "clock" },
+            { label: "New Customers", value: "8", trend: "up", icon: "users" },
+            { label: "Stock Value", value: "₹3.42L", trend: "up", icon: "package" }
+        ];
+
+        const quickStatsDiv = document.getElementById('quickStats');
+        quickStatsDiv.innerHTML = stats.map(stat => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div>
+                    <div class="text-sm font-medium text-secondary">${stat.label}</div>
+                    <div class="text-lg font-bold">${stat.value}</div>
+                </div>
+                <div class="${this.getTrendColor(stat.trend)}">
+                    ${this.getStatIcon(stat.icon)}
+                </div>
             </div>
-        `;
+        `).join('');
+    }
+
+    async loadLowStockAlerts() {
+        // Mock data - replace with Firestore query for low stock items
+        const lowStockItems = [
+            {
+                product: 'Amoxicillin 250mg',
+                category: 'Antibiotic',
+                currentStock: 8,
+                threshold: 20,
+                status: 'critical'
+            },
+            {
+                product: 'Insulin Syringes',
+                category: 'Diabetic Care',
+                currentStock: 15,
+                threshold: 25,
+                status: 'low'
+            },
+            {
+                product: 'Surgical Masks',
+                category: 'Protective',
+                currentStock: 22,
+                threshold: 30,
+                status: 'low'
+            }
+        ];
+
+        const tableBody = document.getElementById('lowStockTable');
+        const countBadge = document.getElementById('lowStockCount');
+        
+        countBadge.textContent = `${lowStockItems.length} items need attention`;
+        
+        tableBody.innerHTML = lowStockItems.map(item => `
+            <tr>
+                <td>
+                    <div class="flex items-center gap-3">
+                        <div style="width: 32px; height: 32px; background: ${this.getStatusColor(item.status, true)}; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                            ${this.getStatusIcon('alert')}
+                        </div>
+                        <div>
+                            <div class="font-medium">${item.product}</div>
+                            <div class="text-xs text-secondary">${item.category}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${item.currentStock} units</td>
+                <td>${item.threshold} units</td>
+                <td>
+                    <span class="badge ${this.getStatusBadge(item.status)}">${this.getStatusText(item.status)}</span>
+                </td>
+                <td>
+                    <button class="btn btn-primary btn-sm">Order Now</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async updateMetricsFromFirestore() {
+        try {
+            // Example of loading real data from Firestore
+            // const productsSnapshot = await this.db.collection('products').get();
+            // const totalProducts = productsSnapshot.size;
+            
+            // const lowStockSnapshot = await this.db.collection('products')
+            //     .where('stock', '<=', 'lowStockThreshold')
+            //     .get();
+            // const lowStockCount = lowStockSnapshot.size;
+            
+            // Update your metric cards here with real data
+            console.log('Firestore data loaded successfully');
+            
+        } catch (error) {
+            console.error('Error loading Firestore data:', error);
+        }
+    }
+
+    setupEventListeners() {
+        // Revenue time range change
+        document.getElementById('revenueTimeRange').addEventListener('change', (e) => {
+            this.updateRevenueChart(e.target.value);
+        });
+
+        // Product view change
+        document.getElementById('productView').addEventListener('change', (e) => {
+            this.updatePerformanceChart(e.target.value);
+        });
+
+        // Add product button
+        document.getElementById('addProductBtn').addEventListener('click', () => {
+            window.location.href = 'tabs/products.html';
+        });
+
+        // Quick action FAB
+        document.getElementById('quickActionBtn').addEventListener('click', () => {
+            // Show quick action menu or redirect
+            window.location.href = 'tabs/products.html?action=add';
+        });
+    }
+
+    updateRevenueChart(timeRange) {
+        // Update chart based on selected time range
+        console.log('Updating revenue chart for:', timeRange, 'days');
+        // Implement actual data fetching and chart update
+    }
+
+    updatePerformanceChart(viewType) {
+        // Update chart based on selected view
+        console.log('Updating performance chart view:', viewType);
+        // Implement actual data fetching and chart update
+    }
+
+    // Helper methods
+    getStatusColor(status, isBackground = false) {
+        const colors = {
+            completed: isBackground ? 'var(--success-50)' : 'var(--success-600)',
+            pending: isBackground ? 'var(--warning-50)' : 'var(--warning-600)',
+            urgent: isBackground ? 'var(--error-50)' : 'var(--error-600)',
+            critical: isBackground ? 'var(--error-50)' : 'var(--error-600)',
+            low: isBackground ? 'var(--warning-50)' : 'var(--warning-600)'
+        };
+        return colors[status] || (isBackground ? 'var(--gray-100)' : 'var(--gray-600)');
+    }
+
+    getStatusBadge(status) {
+        const badges = {
+            completed: 'badge-success',
+            pending: 'badge-warning',
+            urgent: 'badge-error',
+            critical: 'badge-error',
+            low: 'badge-warning'
+        };
+        return badges[status] || 'badge-secondary';
+    }
+
+    getStatusText(status) {
+        const texts = {
+            completed: 'Completed',
+            pending: 'Pending',
+            urgent: 'Urgent',
+            critical: 'Critical',
+            low: 'Low'
+        };
+        return texts[status] || status;
+    }
+
+    getTrendColor(trend) {
+        const colors = {
+            up: 'text-success',
+            down: 'text-error',
+            neutral: 'text-warning'
+        };
+        return colors[trend] || 'text-secondary';
+    }
+
+    getStatusIcon(icon) {
+        const icons = {
+            package: `<svg style="width: 16px; height: 16px; color: var(--primary-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>`,
+            check: `<svg style="width: 16px; height: 16px; color: var(--success-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+            alert: `<svg style="width: 16px; height: 16px; color: var(--warning-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>`,
+            warning: `<svg style="width: 16px; height: 16px; color: var(--error-600);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+        };
+        return icons[icon] || icons.package;
+    }
+
+    getStatIcon(icon) {
+        const icons = {
+            'trending-up': `<svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>`,
+            'clock': `<svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+            'users': `<svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/></svg>`,
+            'package': `<svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>`
+        };
+        return icons[icon] || icons.package;
     }
 }
 
-// Clean up chart when leaving page
-window.addEventListener('beforeunload', function() {
-    if (monthlyChart) {
-        monthlyChart.destroy();
-    }
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new Dashboard();
 });
-
-// Make functions globally available
-window.loadDashboardData = loadDashboardData;
