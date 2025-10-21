@@ -119,41 +119,65 @@ class Dashboard {
     }
 
     async loadRecentActivity() {
-        // Mock data - replace with Firestore data
-        const activities = [
-            {
-                product: 'Paracetamol 500mg',
-                code: 'MED-001',
-                type: 'Stock Update',
-                date: 'Just now',
-                status: 'completed',
-                icon: 'package'
-            },
-            {
-                product: 'Vitamin C 1000mg',
-                code: 'MED-045',
-                type: 'Sale',
-                date: '2 hours ago',
-                status: 'completed',
-                icon: 'check'
-            },
-            {
-                product: 'Amoxicillin 250mg',
-                code: 'MED-128',
-                type: 'Low Stock Alert',
-                date: '5 hours ago',
-                status: 'pending',
-                icon: 'alert'
-            },
-            {
-                product: 'Insulin Syringes',
-                code: 'MED-256',
-                type: 'Expiry Alert',
-                date: '1 day ago',
-                status: 'urgent',
-                icon: 'warning'
-            }
-        ];
+    try {
+        // Get recent activities from Firestore
+        const activitiesSnapshot = await this.db.collection('activities')
+            .orderBy('timestamp', 'desc')
+            .limit(10)
+            .get();
+
+        const activities = [];
+        
+        activitiesSnapshot.forEach(doc => {
+            const activity = doc.data();
+            activities.push({
+                id: doc.id,
+                product: activity.productName,
+                code: activity.productCode,
+                type: activity.type,
+                date: this.formatTimestamp(activity.timestamp),
+                status: activity.status,
+                icon: this.getActivityIcon(activity.type)
+            });
+        });
+
+        // If no activities in Firestore, use mock data
+        if (activities.length === 0) {
+            activities.push(
+                {
+                    product: 'Paracetamol 500mg',
+                    code: 'MED-001',
+                    type: 'Stock Update',
+                    date: 'Just now',
+                    status: 'completed',
+                    icon: 'package'
+                },
+                {
+                    product: 'Vitamin C 1000mg',
+                    code: 'MED-045',
+                    type: 'Sale',
+                    date: '2 hours ago',
+                    status: 'completed',
+                    icon: 'check'
+                },
+                {
+                    product: 'Amoxicillin 250mg',
+                    code: 'MED-128',
+                    type: 'Low Stock Alert',
+                    date: '5 hours ago',
+                    status: 'pending',
+                    icon: 'alert'
+                },
+                {
+                    product: 'Insulin Syringes',
+                    code: 'MED-256',
+                    type: 'Expiry Alert',
+                    date: '1 day ago',
+                    status: 'urgent',
+                    icon: 'warning'
+                }
+            );
+        }
 
         const tableBody = document.getElementById('recentActivityTable');
         tableBody.innerHTML = activities.map(activity => `
@@ -175,11 +199,119 @@ class Dashboard {
                     <span class="badge ${this.getStatusBadge(activity.status)}">${this.getStatusText(activity.status)}</span>
                 </td>
                 <td>
-                    <button class="btn btn-ghost btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm" onclick="dashboard.viewActivity('${activity.id}')">View</button>
                 </td>
             </tr>
         `).join('');
+
+    } catch (error) {
+        console.error('Error loading recent activity:', error);
+        // Fallback to mock data if there's an error
+        this.loadMockRecentActivity();
     }
+}
+
+// Helper method to format Firestore timestamp
+formatTimestamp(timestamp) {
+    if (!timestamp) return 'Unknown date';
+    
+    const now = new Date();
+    const activityDate = timestamp.toDate();
+    const diffInHours = (now - activityDate) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+        return 'Just now';
+    } else if (diffInHours < 24) {
+        return `${Math.floor(diffInHours)} hours ago`;
+    } else {
+        return `${Math.floor(diffInHours / 24)} days ago`;
+    }
+}
+
+// Helper method to get appropriate icon based on activity type
+getActivityIcon(type) {
+    const iconMap = {
+        'Stock Update': 'package',
+        'Sale': 'check',
+        'Low Stock Alert': 'alert',
+        'Expiry Alert': 'warning',
+        'New Product': 'package',
+        'Price Update': 'dollar',
+        'Stock In': 'arrow-down',
+        'Stock Out': 'arrow-up'
+    };
+    return iconMap[type] || 'package';
+}
+
+// Method to view activity details
+viewActivity(activityId) {
+    // Implement view activity functionality
+    console.log('Viewing activity:', activityId);
+    // You can show a modal or redirect to details page
+}
+
+// Fallback method for mock data
+loadMockRecentActivity() {
+    const activities = [
+        {
+            product: 'Paracetamol 500mg',
+            code: 'MED-001',
+            type: 'Stock Update',
+            date: 'Just now',
+            status: 'completed',
+            icon: 'package'
+        },
+        {
+            product: 'Vitamin C 1000mg',
+            code: 'MED-045',
+            type: 'Sale',
+            date: '2 hours ago',
+            status: 'completed',
+            icon: 'check'
+        },
+        {
+            product: 'Amoxicillin 250mg',
+            code: 'MED-128',
+            type: 'Low Stock Alert',
+            date: '5 hours ago',
+            status: 'pending',
+            icon: 'alert'
+        },
+        {
+            product: 'Insulin Syringes',
+            code: 'MED-256',
+            type: 'Expiry Alert',
+            date: '1 day ago',
+            status: 'urgent',
+            icon: 'warning'
+        }
+    ];
+
+    const tableBody = document.getElementById('recentActivityTable');
+    tableBody.innerHTML = activities.map(activity => `
+        <tr>
+            <td>
+                <div class="flex items-center gap-3">
+                    <div style="width: 32px; height: 32px; background: ${this.getStatusColor(activity.status, true)}; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                        ${this.getStatusIcon(activity.icon)}
+                    </div>
+                    <div>
+                        <div class="font-medium">${activity.product}</div>
+                        <div class="text-xs text-secondary">${activity.code}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${activity.type}</td>
+            <td>${activity.date}</td>
+            <td>
+                <span class="badge ${this.getStatusBadge(activity.status)}">${this.getStatusText(activity.status)}</span>
+            </td>
+            <td>
+                <button class="btn btn-ghost btn-sm">View</button>
+            </td>
+        </tr>
+    `).join('');
+}
 
     async loadQuickStats() {
         const stats = [
