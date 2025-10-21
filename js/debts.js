@@ -299,6 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadInvestors();
 });
 
+
 // Make functions globally accessible for inline onclick
 window.showBankForm = showBankForm;
 window.hideBankForm = hideBankForm;
