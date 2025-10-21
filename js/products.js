@@ -1,179 +1,279 @@
-// Firestore initialization (use your firebase-config.js)
-const db = firebase.firestore();
+// js/products.js - COMPLETE FIREBASE VERSION
+console.log('📦 Loading products module...');
 
-// Global charges
+// Global variables
+let products = [];
+let editMode = false;
+
+// DOM elements
+const container = document.getElementById('productContainer');
+const totalSupplierElem = document.getElementById('totalSupplier');
+const totalCNFElem = document.getElementById('totalCNF');
+const totalDeliveryElem = document.getElementById('totalDelivery');
+const grandTotalElem = document.getElementById('grandTotal');
+
+// CNF and delivery charges
 const cnfCharge = 5000;
 const deliveryCharge = 2000;
 
-// Product data example (10 products)
-const products = [
-  {
-    id: 1,
-    name: "Calsanz Fem Capsule",
-    batch: "CF001",
-    expiry: "2026-12-31",
-    mrp: 500,
-    gst: 12, // %
-    retailerPrice: 500 * 0.8,
-    stockistPrice: 500 * 0.8 * 0.9,
-    supplierPrice: 300,
-    bonus: "10+1 strip",
-    stock: 200,
-    category: "Capsules",
-    description: "Calcium & Vitamin D capsule"
-  },
-  {
-    id: 2,
-    name: "Calsanz Strong Capsule",
-    batch: "CS002",
-    expiry: "2026-12-31",
-    mrp: 600,
-    gst: 12,
-    retailerPrice: 600 * 0.8,
-    stockistPrice: 600 * 0.8 * 0.9,
-    supplierPrice: 400,
-    bonus: "10+3 strip",
-    stock: 150,
-    category: "Capsules",
-    description: "Strong Calcium & Vitamin D formulation"
-  },
-  {
-    id: 3,
-    name: "Rabsanz DSR Capsule",
-    batch: "RD003",
-    expiry: "2025-11-30",
-    mrp: 450,
-    gst: 12,
-    retailerPrice: 450 * 0.8,
-    stockistPrice: 450 * 0.8 * 0.9,
-    supplierPrice: 280,
-    bonus: "5+1 strip",
-    stock: 300,
-    category: "Capsules",
-    description: "Rabeprazole + Domperidone"
-  },
-  {
-    id: 4,
-    name: "Rabsanz 20 Tablet",
-    batch: "R20T004",
-    expiry: "2025-10-31",
-    mrp: 350,
-    gst: 12,
-    retailerPrice: 350 * 0.8,
-    stockistPrice: 350 * 0.8 * 0.9,
-    supplierPrice: 200,
-    bonus: "10+2 tablet",
-    stock: 250,
-    category: "Tablets",
-    description: "Rabeprazole 20mg tablet"
-  },
-  {
-    id: 5,
-    name: "FOL D3 Capsule",
-    batch: "FD005",
-    expiry: "2026-01-31",
-    mrp: 400,
-    gst: 12,
-    retailerPrice: 400 * 0.8,
-    stockistPrice: 400 * 0.8 * 0.9,
-    supplierPrice: 250,
-    bonus: "10+1 capsule",
-    stock: 180,
-    category: "Capsules",
-    description: "Folic Acid + Vitamin D3"
-  },
-  {
-    id: 6,
-    name: "Neuron Plus Injection Ampule",
-    batch: "NPIA006",
-    expiry: "2025-12-31",
-    mrp: 1200,
-    gst: 12,
-    retailerPrice: 1200 * 0.8,
-    stockistPrice: 1200 * 0.8 * 0.9,
-    supplierPrice: 800,
-    bonus: "10+3 ampule",
-    stock: 80,
-    category: "Injections",
-    description: "Nootropic injection ampule"
-  },
-  {
-    id: 7,
-    name: "Neuron Plus Capsule",
-    batch: "NPC007",
-    expiry: "2026-06-30",
-    mrp: 700,
-    gst: 12,
-    retailerPrice: 700 * 0.8,
-    stockistPrice: 700 * 0.8 * 0.9,
-    supplierPrice: 450,
-    bonus: "10+2 capsule",
-    stock: 120,
-    category: "Capsules",
-    description: "Nootropic capsule for brain health"
-  },
-  {
-    id: 8,
-    name: "SAZ LQ10 Capsule",
-    batch: "SAZ008",
-    expiry: "2026-03-31",
-    mrp: 550,
-    gst: 12,
-    retailerPrice: 550 * 0.8,
-    stockistPrice: 550 * 0.8 * 0.9,
-    supplierPrice: 350,
-    bonus: "10+1 capsule",
-    stock: 100,
-    category: "Capsules",
-    description: "Coenzyme Q10 supplement"
-  },
-  {
-    id: 9,
-    name: "Sinoplex-L Syrup",
-    batch: "SLS009",
-    expiry: "2025-12-31",
-    mrp: 300,
-    gst: 12,
-    retailerPrice: 300 * 0.8,
-    stockistPrice: 300 * 0.8 * 0.9,
-    supplierPrice: 180,
-    bonus: "1+1 bottle",
-    stock: 150,
-    category: "Syrup",
-    description: "Multivitamin syrup"
-  },
-  {
-    id: 10,
-    name: "Rabsanz DSR Tablet",
-    batch: "RDT010",
-    expiry: "2025-10-31",
-    mrp: 480,
-    gst: 12,
-    retailerPrice: 480 * 0.8,
-    stockistPrice: 480 * 0.8 * 0.9,
-    supplierPrice: 300,
-    bonus: "5+1 tablet",
-    stock: 200,
-    category: "Tablets",
-    description: "Rabeprazole + Domperidone combination tablet"
-  }
-];
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        console.error('Firebase not available');
+        showErrorMessage('Firebase not loaded. Please refresh the page.');
+        return;
+    }
+    
+    console.log('Firebase available, loading products...');
+    loadProducts();
+});
 
-// Firestore CRUD example functions
-function addProduct(product) {
-  db.collection("products").doc(product.id.toString()).set(product)
-    .then(() => console.log("Product added:", product.name))
-    .catch(err => console.error(err));
+// Load products from Firestore
+async function loadProducts() {
+    try {
+        showLoadingState();
+        console.log('Loading products from Firestore...');
+        
+        const snapshot = await firebase.firestore().collection('products').get();
+        
+        products = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            products.push({ 
+                id: doc.id, 
+                name: data.name || 'Unnamed Product',
+                batch: data.batch || 'N/A',
+                expiry: data.expiry || '',
+                mrp: data.mrp || 0,
+                gst: data.gst || 0,
+                retailerPrice: data.retailerPrice || 0,
+                stockistPrice: data.stockistPrice || 0,
+                supplierPrice: data.supplierPrice || 0,
+                bonus: data.bonus || '',
+                stock: data.stock || 0,
+                category: data.category || '',
+                description: data.description || 'No description available'
+            });
+        });
+        
+        console.log(`Loaded ${products.length} products from Firestore`);
+        renderProducts();
+        
+    } catch (error) {
+        console.error('Error loading products:', error);
+        showErrorMessage('Failed to load products: ' + error.message);
+    }
 }
 
-function updateProduct(productId, updatedData) {
-  db.collection("products").doc(productId.toString()).update(updatedData)
-    .then(() => console.log("Product updated:", productId))
-    .catch(err => console.error(err));
+// Render products to the page
+function renderProducts() {
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (products.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #6c757d;">
+                <h3>No products found</h3>
+                <p>Click "Add New Product" to create your first product</p>
+            </div>
+        `;
+        updateSummary();
+        return;
+    }
+    
+    let totalSupplier = 0;
+
+    products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            ${product.bonus ? `<div class="bonus">${product.bonus}</div>` : ''}
+            <div class="product-name">${product.name}</div>
+            <div class="description">${product.description}</div>
+            <div class="price">MRP: ₹${product.mrp.toFixed(2)}</div>
+            <div class="price">Retailer: ₹${product.retailerPrice.toFixed(2)}</div>
+            <div class="price">Stockist: ₹${product.stockistPrice.toFixed(2)}</div>
+            <div class="supplier">Supplier: ₹${product.supplierPrice.toFixed(2)}</div>
+            <div class="gst">GST: ${product.gst}%</div>
+            <div class="stock">Stock: ${product.stock}</div>
+            <div class="batch">Batch: ${product.batch}</div>
+            <div class="expiry">Expiry: ${product.expiry || 'N/A'}</div>
+            <div style="margin-top: 15px;">
+                <button class="btn edit-btn" onclick="editProduct('${product.id}')">Edit</button>
+                <button class="btn delete-btn" onclick="deleteProduct('${product.id}')">Delete</button>
+            </div>
+        `;
+        container.appendChild(card);
+        totalSupplier += product.supplierPrice * product.stock;
+    });
+
+    updateSummary(totalSupplier);
 }
 
-function deleteProduct(productId) {
-  db.collection("products").doc(productId.toString()).delete()
-    .then(() => console.log("Product deleted:", productId))
-    .catch(err => console.error(err));
+// Update summary calculations
+function updateSummary(totalSupplier = 0) {
+    if (totalSupplierElem) {
+        totalSupplierElem.textContent = totalSupplier.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    if (totalCNFElem) {
+        totalCNFElem.textContent = cnfCharge.toLocaleString('en-IN');
+    }
+    if (totalDeliveryElem) {
+        totalDeliveryElem.textContent = deliveryCharge.toLocaleString('en-IN');
+    }
+    if (grandTotalElem) {
+        const grandTotal = totalSupplier + cnfCharge + deliveryCharge;
+        grandTotalElem.textContent = grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
 }
+
+// Show Add Product Form
+function showAddForm() {
+    editMode = false;
+    document.getElementById('formTitle').textContent = "Add Product";
+    document.getElementById('productForm').style.display = 'block';
+    document.getElementById('productId').value = '';
+    
+    // Clear all form fields
+    const fields = ['name', 'batch', 'expiry', 'mrp', 'gst', 'retailerPrice', 'stockistPrice', 'supplierPrice', 'bonus', 'stock', 'category', 'description'];
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) element.value = '';
+    });
+}
+
+// Hide Form
+function hideForm() {
+    document.getElementById('productForm').style.display = 'none';
+}
+
+// Save Product (Add or Update)
+async function saveProduct() {
+    try {
+        const productId = document.getElementById('productId').value;
+        const productData = {
+            name: document.getElementById('name').value,
+            batch: document.getElementById('batch').value,
+            expiry: document.getElementById('expiry').value,
+            mrp: parseFloat(document.getElementById('mrp').value) || 0,
+            gst: parseFloat(document.getElementById('gst').value) || 0,
+            retailerPrice: parseFloat(document.getElementById('retailerPrice').value) || 0,
+            stockistPrice: parseFloat(document.getElementById('stockistPrice').value) || 0,
+            supplierPrice: parseFloat(document.getElementById('supplierPrice').value) || 0,
+            bonus: document.getElementById('bonus').value,
+            stock: parseInt(document.getElementById('stock').value) || 0,
+            category: document.getElementById('category').value,
+            description: document.getElementById('description').value,
+            lastUpdated: new Date()
+        };
+
+        // Validate required fields
+        if (!productData.name || !productData.batch) {
+            alert('Please fill in Product Name and Batch (required fields)');
+            return;
+        }
+
+        if (editMode && productId) {
+            // Update existing product
+            await firebase.firestore().collection('products').doc(productId).update(productData);
+            console.log('Product updated:', productId);
+            alert('Product updated successfully!');
+        } else {
+            // Add new product
+            const docRef = await firebase.firestore().collection('products').add(productData);
+            console.log('Product added with ID:', docRef.id);
+            alert('Product added successfully!');
+        }
+
+        hideForm();
+        await loadProducts(); // Reload to get fresh data
+        
+    } catch (error) {
+        console.error('Error saving product:', error);
+        alert('Error saving product: ' + error.message);
+    }
+}
+
+// Edit Product
+async function editProduct(id) {
+    try {
+        const product = products.find(p => p.id === id);
+        if (!product) {
+            alert('Product not found');
+            return;
+        }
+        
+        editMode = true;
+        document.getElementById('formTitle').textContent = "Edit Product";
+        document.getElementById('productForm').style.display = 'block';
+        document.getElementById('productId').value = product.id;
+        
+        // Fill form with product data
+        document.getElementById('name').value = product.name || '';
+        document.getElementById('batch').value = product.batch || '';
+        document.getElementById('expiry').value = product.expiry || '';
+        document.getElementById('mrp').value = product.mrp || '';
+        document.getElementById('gst').value = product.gst || '';
+        document.getElementById('retailerPrice').value = product.retailerPrice || '';
+        document.getElementById('stockistPrice').value = product.stockistPrice || '';
+        document.getElementById('supplierPrice').value = product.supplierPrice || '';
+        document.getElementById('bonus').value = product.bonus || '';
+        document.getElementById('stock').value = product.stock || '';
+        document.getElementById('category').value = product.category || '';
+        document.getElementById('description').value = product.description || '';
+        
+    } catch (error) {
+        console.error('Error editing product:', error);
+        alert('Error editing product: ' + error.message);
+    }
+}
+
+// Delete Product
+async function deleteProduct(id) {
+    if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+        try {
+            await firebase.firestore().collection('products').doc(id).delete();
+            console.log('Product deleted:', id);
+            await loadProducts(); // Reload products
+            alert('Product deleted successfully!');
+            
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            alert('Error deleting product: ' + error.message);
+        }
+    }
+}
+
+// Show loading state
+function showLoadingState() {
+    if (container) {
+        container.innerHTML = `
+            <div class="loading">
+                <h3>Loading products...</h3>
+                <p>Please wait while we load your product catalog</p>
+            </div>
+        `;
+    }
+}
+
+// Show error message
+function showErrorMessage(message) {
+    if (container) {
+        container.innerHTML = `
+            <div class="error-message">
+                <h3>Error Loading Products</h3>
+                <p>${message}</p>
+                <button class="btn add-btn" onclick="loadProducts()" style="margin-top: 10px;">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+// Make functions globally available
+window.showAddForm = showAddForm;
+window.hideForm = hideForm;
+window.saveProduct = saveProduct;
+window.editProduct = editProduct;
+window.deleteProduct = deleteProduct;
+window.loadProducts = loadProducts;
