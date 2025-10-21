@@ -1,5 +1,24 @@
 // js/dashboard.js - FIXED VERSION (No imports)
+// js/dashboard.js - Add this at the top
+function checkFirebase() {
+    if (typeof firebase === 'undefined' || !firebase.apps.length) {
+        console.error('Firebase not available');
+        return false;
+    }
+    return true;
+}
 
+// Then modify your DOMContentLoaded:
+document.addEventListener('DOMContentLoaded', function() {
+    if (!checkFirebase()) {
+        showErrorState('Firebase not loaded. Please refresh.');
+        return;
+    }
+    
+    checkAuthState();
+    loadDashboardData();
+    initNavigation();
+});
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof firebase === 'undefined' || !firebase.apps.length) {
