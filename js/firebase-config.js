@@ -1,18 +1,22 @@
-// firebase-config.js - USING YOUR REAL FIREBASE CONFIG
+// firebase-config.js - CORRECTED VERSION
 const firebaseConfig = {
-  apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk", // YOUR REAL KEY
+  apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
   authDomain: "sanj-healthcare-77e02.firebaseapp.com",
-  projectId: "sanj-healthcare-77e02", 
+  projectId: "sanj-healthcare-77e02",
   storageBucket: "sanj-healthcare-77e02.firebasestorage.app",
   messagingSenderId: "710696156355",
   appId: "1:710696156355:web:13bcee177f46e3aebc7676",
   measurementId: "G-HDKXN3LZ7P"
+};
 
 // Initialize Firebase
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase initialized successfully with your project');
+        console.log('🔥 Firebase initialized successfully');
+    } else {
+        firebase.app(); // Use existing app
+        console.log('🔥 Firebase app already exists');
     }
 } catch (error) {
     console.error('🔥 Firebase initialization error:', error);
@@ -67,6 +71,4 @@ function showTemporaryMessage(message, type = 'info') {
     }, 4000);
 }
 
-console.log('📄 Firebase config loaded with project: sanj-healthcare-77e02');
-console.log('✅ LOADING CORRECT FIREBASE CONFIG WITH REAL API KEY');
-console.log('🔑 API Key:', firebaseConfig.apiKey);
+console.log('📄 Firebase config loaded');
