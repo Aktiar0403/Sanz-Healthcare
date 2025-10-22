@@ -33,6 +33,7 @@
   .loading { text-align: center; padding: 40px; color: #6c757d; }
   .error-message { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; text-align: center; }
   .scheme-badge { background: #ffa500; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px; }
+
 </style>
 </head>
 <body>
@@ -52,6 +53,16 @@
   <input type="number" id="retailerPrice" placeholder="Retailer Price" step="0.01" min="0">
   <input type="number" id="stockistPrice" placeholder="Stockist Price" step="0.01" min="0">
   <input type="number" id="supplierPrice" placeholder="Supplier Price" step="0.01" min="0">
+  <!-- Add these fields to your products form in products.html -->
+<div class="form-group">
+    <label>Composition</label>
+    <input type="text" id="composition" placeholder="Active ingredients and strengths">
+</div>
+
+<div class="form-group">
+    <label>Packing</label>
+    <input type="text" id="packing" placeholder="e.g., 10x10 Tablets, 100ml Bottle">
+</div>
   
   <!-- Scheme/Bonus Field -->
   <select id="bonus">

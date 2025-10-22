@@ -30,3 +30,41 @@ try {
     console.error('❌ Firebase initialization failed:', error);
   }
 }
+// Add this at the BOTTOM of your existing firebase-config.js:
+
+// Auto-initialize products on first load
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for auth to initialize, then check products
+    setTimeout(() => {
+        if (firebase.auth().currentUser) {
+            initializeProducts();
+        }
+    }, 2000);
+});
+
+// Enhanced temporary message function
+function showTemporaryMessage(message, type = 'info') {
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        z-index: 1000;
+        font-weight: bold;
+        transition: opacity 0.3s;
+    `;
+    
+    messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : 
+                                      type === 'error' ? '#dc3545' : '#17a2b8';
+    messageDiv.textContent = message;
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(messageDiv), 300);
+    }, 3000);
+}

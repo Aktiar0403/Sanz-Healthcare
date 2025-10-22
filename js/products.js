@@ -89,27 +89,30 @@ function renderProducts() {
     products.forEach(product => {
         const card = document.createElement('div');
         card.className = 'card';
-        card.innerHTML = `
-            ${product.bonus ? `<div class="bonus">${product.bonus}</div>` : ''}
-            <div class="product-name">
-                ${product.name}
-                ${product.bonus ? `<span class="scheme-badge">Scheme</span>` : ''}
-            </div>
-            <div class="description">${product.description}</div>
-            <div class="price">MRP: ₹${product.mrp.toFixed(2)}</div>
-            <div class="price">Retailer: ₹${product.retailerPrice.toFixed(2)}</div>
-            <div class="price">Stockist: ₹${product.stockistPrice.toFixed(2)}</div>
-            <div class="supplier">Supplier: ₹${product.supplierPrice.toFixed(2)}</div>
-            <div class="gst">GST: ${product.gst}%</div>
-            <div class="stock">Stock: ${product.stock}</div>
-            <div class="batch">Batch: ${product.batch}</div>
-            <div class="expiry">Expiry: ${product.expiry || 'N/A'}</div>
-            <div class="category">Category: ${product.category || 'General'}</div>
-            <div style="margin-top: 15px;">
-                <button class="btn edit-btn" onclick="editProduct('${product.id}')">Edit</button>
-                <button class="btn delete-btn" onclick="deleteProduct('${product.id}')">Delete</button>
-            </div>
-        `;
+       // In your renderProducts function in products.js, update the card HTML:
+card.innerHTML = `
+    ${product.bonus ? `<div class="bonus">${product.bonus}</div>` : ''}
+    <div class="product-name">
+        ${product.name}
+        ${product.bonus ? `<span class="scheme-badge">Scheme</span>` : ''}
+    </div>
+    ${product.composition ? `<div class="product-composition">${product.composition}</div>` : ''}
+    <div class="description">${product.description}</div>
+    ${product.packing ? `<div class="product-packing">${product.packing}</div>` : ''}
+    <div class="price">MRP: ₹${product.mrp.toFixed(2)}</div>
+    <div class="price">Retailer: ₹${product.retailerPrice.toFixed(2)}</div>
+    <div class="price">Stockist: ₹${product.stockistPrice.toFixed(2)}</div>
+    <div class="supplier">Supplier: ₹${product.supplierPrice.toFixed(2)}</div>
+    <div class="gst">GST: ${product.gst}%</div>
+    <div class="stock">Stock: ${product.stock}</div>
+    <div class="batch">Batch: ${product.batch}</div>
+    <div class="expiry">Expiry: ${product.expiry || 'N/A'}</div>
+    <div class="category">Category: ${product.category || 'General'}</div>
+    <div style="margin-top: 15px;">
+        <button class="btn edit-btn" onclick="editProduct('${product.id}')">Edit</button>
+        <button class="btn delete-btn" onclick="deleteProduct('${product.id}')">Delete</button>
+    </div>
+`;
         container.appendChild(card);
         totalSupplier += product.supplierPrice * product.stock;
     });
