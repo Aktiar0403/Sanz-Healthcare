@@ -107,17 +107,77 @@ function updateSummary() {
 }
 
 // Switch between tabs
+// REPLACE the switchTab function in stock.js with this version:
 function switchTab(tabName) {
-    currentTab = tabName;
+    console.log('📊 Switching stock tab to:', tabName);
     
-    // Update tab UI
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
-    
-    renderStockTable();
+    try {
+        // Safely update tab buttons - only if they exist
+        const tabs = document.querySelectorAll('.tab');
+        if (tabs && tabs.length > 0) {
+            tabs.forEach(tab => {
+                if (tab && tab.classList) {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Find the active tab safely
+            const activeTab = document.querySelector(`.tab[onclick*="switchTab('${tabName}')"]`) || 
+                             document.querySelector(`.tab[onclick*='switchTab("${tabName}")']`);
+            
+            if (activeTab && activeTab.classList) {
+                activeTab.classList.add('active');
+            }
+        }
+        
+        // Filter entries based on tab
+        let filteredEntries = stockEntries;
+        
+        switch (tabName) {
+            case 'low':
+                const lowStockProductIds = products
+                    .filter(p => (p.stock || 0) < lowStockThreshold)
+                    .map(p => p.id);
+                filteredEntries = stockEntries.filter(entry => 
+                    lowStockProductIds.includes(entry.productId)
+                );
+                break;
+                
+            case 'scheme':
+                filteredEntries = stockEntries.filter(entry => 
+                    entry.type === 'scheme_sale'
+                );
+                break;
+                
+            case 'expired':
+                const today = new Date();
+                const expiredProductIds = products.filter(p => {
+                    if (!p.expiry) return false;
+                    try {
+                        const expiryDate = new Date(p.expiry);
+                        return expiryDate < today;
+                    } catch (e) {
+                        return false;
+                    }
+                }).map(p => p.id);
+                filteredEntries = stockEntries.filter(entry => 
+                    expiredProductIds.includes(entry.productId)
+                );
+                break;
+                
+            default: // 'all'
+                filteredEntries = stockEntries;
+        }
+        
+        renderStockTable(filteredEntries);
+        
+    } catch (error) {
+        console.error('❌ Error in switchTab:', error);
+    }
 }
+
+// ADD this line to make sure the function is available globally
+window.switchTab = switchTab;
 
 // Show Add Stock Form
 function showAddStockForm() {
