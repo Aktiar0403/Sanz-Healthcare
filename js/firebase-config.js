@@ -68,3 +68,5 @@ function showTemporaryMessage(message, type = 'info') {
 }
 
 console.log('📄 Firebase config loaded with project: sanj-healthcare-77e02');
+console.log('✅ LOADING CORRECT FIREBASE CONFIG WITH REAL API KEY');
+console.log('🔑 API Key:', firebaseConfig.apiKey);
