@@ -645,16 +645,17 @@
 
         // Login Functionality
         // In your index.html, replace the login form handler with this:
+// CORRECTED LOGIN HANDLER - replace in your index.html
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const loginBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = loginBtn.textContent; // DEFINE THIS HERE
     
     try {
         // Show loading state
-        const loginBtn = e.target.querySelector('button[type="submit"]');
-        const originalText = loginBtn.textContent;
         loginBtn.textContent = 'Signing in...';
         loginBtn.disabled = true;
         
@@ -665,46 +666,53 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         console.error('❌ Login failed:', error);
         
         // Show specific error messages
-        let errorMessage = 'Login failed: ' + error.message;
+        let errorMessage = 'Login failed. ';
         
         if (error.code === 'auth/user-not-found') {
-            errorMessage = 'No account found with this email. Please sign up first.';
+            errorMessage += 'No account found. Please sign up first.';
         } else if (error.code === 'auth/wrong-password') {
-            errorMessage = 'Incorrect password. Please try again.';
+            errorMessage += 'Incorrect password.';
         } else if (error.code === 'auth/invalid-email') {
-            errorMessage = 'Invalid email address.';
+            errorMessage += 'Invalid email address.';
         } else if (error.code === 'auth/operation-not-allowed') {
-            errorMessage = 'Email/password login is not enabled. Please check Firebase Authentication settings.';
+            errorMessage += 'Email/password login not enabled. Check Firebase settings.';
+        } else if (error.code === 'auth/internal-error') {
+            errorMessage += 'Firebase configuration error. Check your API key.';
+        } else {
+            errorMessage += error.message;
         }
         
         alert(errorMessage);
         
         // Reset button
-        const loginBtn = e.target.querySelector('button[type="submit"]');
         loginBtn.textContent = originalText;
         loginBtn.disabled = false;
     }
 });
-
 // Add a demo user creation function for testing
+// Add this function to create a demo user
 async function createDemoUser() {
     try {
-        // First, try to create a demo user
-        const email = 'admin@sanjhealthcare.com';
+        const email = 'admin@sanj.com';
         const password = 'admin123';
         
         const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        console.log('✅ Demo user created:', userCredential.user);
-        alert('Demo user created! You can now login with:\nEmail: admin@sanjhealthcare.com\nPassword: admin123');
+        console.log('✅ Demo user created!');
+        alert('Demo user created!\nEmail: admin@sanj.com\nPassword: admin123');
         
     } catch (error) {
         if (error.code === 'auth/email-already-in-use') {
-            console.log('ℹ️ Demo user already exists');
+            alert('Demo user already exists. Try logging in with:\nEmail: admin@sanj.com\nPassword: admin123');
+        } else if (error.code === 'auth/operation-not-allowed') {
+            alert('Email/password authentication not enabled. Please enable it in Firebase Console.');
         } else {
-            console.error('❌ Error creating demo user:', error);
+            alert('Error: ' + error.message);
         }
     }
 }
+
+// Add this button to your login form temporarily:
+// <button type="button" onclick="createDemoUser()" style="margin-top: 10px; background: #666; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%;">Create Demo Account</button>
 
 // Add this button to your login form for testing:
 // <button type="button" onclick="createDemoUser()" style="margin-top: 10px; background: #666; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Create Demo Account</button>);
@@ -896,8 +904,6 @@ async function createDemoUser() {
         console.log('🏥 Sanj Healthcare App Initialized');
     </script>
     <!-- In your index.html, add this line -->
-<script src="js/firebase-config.js"></script>
-<script src="js/init-products.js"></script>  <!-- ADD THIS LINE -->
-<script src="js/navigation.js"></script>
+
 </body>
 </html>
