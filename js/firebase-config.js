@@ -2,12 +2,13 @@
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyC4wGDrMTFbO7k2u6Q7Qn6Q8Y5q9yLm8eA", // Replace with your actual API key
-    authDomain: "sanj-healthcare.firebaseapp.com", // Replace with your actual domain
-    projectId: "sanj-healthcare", // Replace with your actual project ID
-    storageBucket: "sanj-healthcare.appspot.com", // Replace with your actual bucket
-    messagingSenderId: "123456789", // Replace with your actual sender ID
-    appId: "your-app-id" // Replace with your actual app ID
+  apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
+  authDomain: "sanj-healthcare-77e02.firebaseapp.com",
+  projectId: "sanj-healthcare-77e02",
+  storageBucket: "sanj-healthcare-77e02.firebasestorage.app",
+  messagingSenderId: "710696156355",
+  appId: "1:710696156355:web:13bcee177f46e3aebc7676",
+  measurementId: "G-HDKXN3LZ7P"
 };
 
 // Initialize Firebase
@@ -23,15 +24,7 @@ try {
     console.error('🔥 Firebase initialization error:', error);
 }
 
-// Demo configuration for testing (remove in production)
-const demoConfig = {
-    apiKey: "demo-api-key",
-    authDomain: "demo.firebaseapp.com",
-    projectId: "demo-project",
-    storageBucket: "demo.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "demo-app-id"
-};
+
 
 // Auto-initialize products on first load
 document.addEventListener('DOMContentLoaded', function() {
