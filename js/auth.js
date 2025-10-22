@@ -1,38 +1,42 @@
-// js/auth.js - UPDATED VERSION
-function login(email, password) {
-    // Check if Firebase auth is available
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-        alert('Firebase not loaded. Please refresh the page.');
-        return;
+class AuthManager {
+    constructor() {
+        this.currentUser = null;
+        this.initAuthListener();
     }
-    
-    firebase.auth().signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            console.log("Logged in:", userCredential.user.email);
-            window.location.href = 'index.html';
-        })
-        .catch(err => {
-            console.error("Login error:", err);
-            alert('Login failed: ' + err.message);
+
+    initAuthListener() {
+        auth.onAuthStateChanged((user) => {
+            this.currentUser = user;
+            if (user) {
+                // User is signed in
+                window.location.href = 'index.html';
+            } else {
+                // User is signed out
+                if (window.location.pathname !== '/login.html') {
+                    window.location.href = 'login.html';
+                }
+            }
         });
+    }
+
+    async login(email, password) {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            return { success: true, user: userCredential.user };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    async logout() {
+        try {
+            await auth.signOut();
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
 }
 
-function logout() {
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-        console.error('Firebase auth not available');
-        return;
-    }
-    
-    firebase.auth().signOut()
-        .then(() => {
-            console.log("Logged out");
-            window.location.href = 'login.html';
-        })
-        .catch(err => {
-            console.error("Logout error:", err);
-        });
-}
-
-// Make functions globally available
-window.logout = logout;
-window.login = login;
+// Initialize auth manager
+const authManager = new AuthManager();
