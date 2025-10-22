@@ -1,48 +1,53 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+// firebase-config.js - CORRECTED VERSION (No import statements)
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
-  authDomain: "sanj-healthcare-77e02.firebaseapp.com",
-  projectId: "sanj-healthcare-77e02",
-  storageBucket: "sanj-healthcare-77e02.firebasestorage.app",
-  messagingSenderId: "710696156355",
-  appId: "1:710696156355:web:13bcee177f46e3aebc7676",
-  measurementId: "G-HDKXN3LZ7P"
+    apiKey: "AIzaSyC4wGDrMTFbO7k2u6Q7Qn6Q8Y5q9yLm8eA", // Replace with your actual API key
+    authDomain: "sanj-healthcare.firebaseapp.com", // Replace with your actual domain
+    projectId: "sanj-healthcare", // Replace with your actual project ID
+    storageBucket: "sanj-healthcare.appspot.com", // Replace with your actual bucket
+    messagingSenderId: "123456789", // Replace with your actual sender ID
+    appId: "your-app-id" // Replace with your actual app ID
 };
 
-// Simple initialization - remove all complex checks
+// Initialize Firebase
 try {
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  console.log('✅ Firebase initialized successfully');
-  
-  // Initialize services
-  const db = firebase.firestore();
-  const auth = firebase.auth();
-  
-  console.log('✅ Firebase services ready');
-  
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        console.log('🔥 Firebase initialized successfully');
+    } else {
+        firebase.app(); // if already initialized, use that one
+        console.log('🔥 Firebase already initialized');
+    }
 } catch (error) {
-  if (error.code === 'app/duplicate-app') {
-    console.log('ℹ️ Firebase already initialized');
-  } else {
-    console.error('❌ Firebase initialization failed:', error);
-  }
+    console.error('🔥 Firebase initialization error:', error);
 }
-// Add this at the BOTTOM of your existing firebase-config.js:
+
+// Demo configuration for testing (remove in production)
+const demoConfig = {
+    apiKey: "demo-api-key",
+    authDomain: "demo.firebaseapp.com",
+    projectId: "demo-project",
+    storageBucket: "demo.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "demo-app-id"
+};
 
 // Auto-initialize products on first load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 App loaded, checking Firebase...');
+    
     // Wait for auth to initialize, then check products
     setTimeout(() => {
-        if (firebase.auth().currentUser) {
-            initializeProducts();
+        if (typeof initializeProducts === 'function') {
+            if (firebase.auth().currentUser) {
+                console.log('👤 User logged in, initializing products...');
+                initializeProducts();
+            } else {
+                console.log('👤 No user logged in, products will init after login');
+            }
         }
-    }, 2000);
+    }, 3000);
 });
 
 // Enhanced temporary message function
@@ -58,6 +63,7 @@ function showTemporaryMessage(message, type = 'info') {
         z-index: 1000;
         font-weight: bold;
         transition: opacity 0.3s;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     `;
     
     messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : 
@@ -68,6 +74,12 @@ function showTemporaryMessage(message, type = 'info') {
     
     setTimeout(() => {
         messageDiv.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(messageDiv), 300);
-    }, 3000);
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                document.body.removeChild(messageDiv);
+            }
+        }, 300);
+    }, 4000);
 }
+
+console.log('📄 Firebase config loaded');
