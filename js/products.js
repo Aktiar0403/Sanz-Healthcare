@@ -52,7 +52,9 @@ async function loadProducts() {
                 bonus: data.bonus || '',
                 stock: data.stock || 0,
                 category: data.category || '',
-                description: data.description || 'No description available'
+                description: data.description || 'No description available',
+                createdAt: data.createdAt || new Date(),
+                updatedAt: data.updatedAt || new Date()
             });
         });
         
@@ -89,7 +91,10 @@ function renderProducts() {
         card.className = 'card';
         card.innerHTML = `
             ${product.bonus ? `<div class="bonus">${product.bonus}</div>` : ''}
-            <div class="product-name">${product.name}</div>
+            <div class="product-name">
+                ${product.name}
+                ${product.bonus ? `<span class="scheme-badge">Scheme</span>` : ''}
+            </div>
             <div class="description">${product.description}</div>
             <div class="price">MRP: ₹${product.mrp.toFixed(2)}</div>
             <div class="price">Retailer: ₹${product.retailerPrice.toFixed(2)}</div>
@@ -99,6 +104,7 @@ function renderProducts() {
             <div class="stock">Stock: ${product.stock}</div>
             <div class="batch">Batch: ${product.batch}</div>
             <div class="expiry">Expiry: ${product.expiry || 'N/A'}</div>
+            <div class="category">Category: ${product.category || 'General'}</div>
             <div style="margin-top: 15px;">
                 <button class="btn edit-btn" onclick="editProduct('${product.id}')">Edit</button>
                 <button class="btn delete-btn" onclick="deleteProduct('${product.id}')">Delete</button>
@@ -165,7 +171,7 @@ async function saveProduct() {
             stock: parseInt(document.getElementById('stock').value) || 0,
             category: document.getElementById('category').value,
             description: document.getElementById('description').value,
-            lastUpdated: new Date()
+            updatedAt: new Date()
         };
 
         // Validate required fields
@@ -178,12 +184,13 @@ async function saveProduct() {
             // Update existing product
             await firebase.firestore().collection('products').doc(productId).update(productData);
             console.log('Product updated:', productId);
-            alert('Product updated successfully!');
+            showTemporaryMessage('Product updated successfully!', 'success');
         } else {
             // Add new product
+            productData.createdAt = new Date();
             const docRef = await firebase.firestore().collection('products').add(productData);
             console.log('Product added with ID:', docRef.id);
-            alert('Product added successfully!');
+            showTemporaryMessage('Product added successfully!', 'success');
         }
 
         hideForm();
@@ -191,7 +198,7 @@ async function saveProduct() {
         
     } catch (error) {
         console.error('Error saving product:', error);
-        alert('Error saving product: ' + error.message);
+        showTemporaryMessage('Error saving product: ' + error.message, 'error');
     }
 }
 
@@ -225,22 +232,31 @@ async function editProduct(id) {
         
     } catch (error) {
         console.error('Error editing product:', error);
-        alert('Error editing product: ' + error.message);
+        showTemporaryMessage('Error editing product: ' + error.message, 'error');
     }
 }
 
 // Delete Product
 async function deleteProduct(id) {
-    if (confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+    
+    const confirmation = confirm(
+        `Are you sure you want to delete "${product.name}" (Batch: ${product.batch})?\n\n` +
+        `Stock: ${product.stock} units\n` +
+        `This action cannot be undone!`
+    );
+    
+    if (confirmation) {
         try {
             await firebase.firestore().collection('products').doc(id).delete();
             console.log('Product deleted:', id);
-            await loadProducts(); // Reload products
-            alert('Product deleted successfully!');
+            showTemporaryMessage('Product deleted successfully!', 'success');
+            await loadProducts();
             
         } catch (error) {
             console.error('Error deleting product:', error);
-            alert('Error deleting product: ' + error.message);
+            showTemporaryMessage('Error deleting product: ' + error.message, 'error');
         }
     }
 }
@@ -269,6 +285,44 @@ function showErrorMessage(message) {
         `;
     }
 }
+
+// Temporary message helper
+function showTemporaryMessage(message, type = 'info') {
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        z-index: 1000;
+        font-weight: bold;
+        transition: opacity 0.3s;
+    `;
+    
+    messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : 
+                                      type === 'error' ? '#dc3545' : '#17a2b8';
+    messageDiv.textContent = message;
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(messageDiv), 300);
+    }, 3000);
+}
+
+// Global helper function for other modules
+window.getProductById = async function(productId) {
+    try {
+        const doc = await firebase.firestore().collection('products').doc(productId).get();
+        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        return null;
+    }
+};
 
 // Make functions globally available
 window.showAddForm = showAddForm;

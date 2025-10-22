@@ -4,11 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sanj Healthcare - Products</title>
- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/design-system.css">
-    <link rel="stylesheet" href="../css/components.css">
-
-<!-- Load Firebase FIRST -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="stylesheet" href="../css/components.css">
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -34,6 +32,7 @@
   .form-buttons { display: flex; gap: 10px; margin-top: 15px; }
   .loading { text-align: center; padding: 40px; color: #6c757d; }
   .error-message { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 10px 0; text-align: center; }
+  .scheme-badge { background: #ffa500; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.8em; margin-left: 5px; }
 </style>
 </head>
 <body>
@@ -53,7 +52,19 @@
   <input type="number" id="retailerPrice" placeholder="Retailer Price" step="0.01" min="0">
   <input type="number" id="stockistPrice" placeholder="Stockist Price" step="0.01" min="0">
   <input type="number" id="supplierPrice" placeholder="Supplier Price" step="0.01" min="0">
-  <input type="text" id="bonus" placeholder="Bonus Offer">
+  
+  <!-- Scheme/Bonus Field -->
+  <select id="bonus">
+    <option value="">No Scheme</option>
+    <option value="10+1">10+1 Scheme</option>
+    <option value="10+2">10+2 Scheme</option>
+    <option value="1+1">1+1 Scheme</option>
+    <option value="5+1">5+1 Scheme</option>
+    <option value="20% Extra">20% Extra</option>
+    <option value="10% Extra">10% Extra</option>
+    <option value="Free Gift">Free Gift</option>
+  </select>
+  
   <input type="number" id="stock" placeholder="Stock Quantity" min="0">
   <input type="text" id="category" placeholder="Category">
   <input type="text" id="description" placeholder="Description">
@@ -78,7 +89,6 @@
   <p><strong>Grand Total: ₹<span id="grandTotal">0</span></strong></p>
 </div>
 
-<!-- Load scripts in correct order -->
 <script src="../js/firebase-config.js"></script>
 <script src="../js/navigation.js"></script>
 <script src="../js/products.js"></script>

@@ -1,148 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Debts Management - Sanj Healthcare</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/design-system.css">
-    <link rel="stylesheet" href="../css/components.css">
-  <!-- FIREBASE V8 (consistent with other pages) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sanj Healthcare - Debt Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="stylesheet" href="../css/components.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+  h1 { text-align: center; margin-top: 20px; color: #333; }
   
-  <style>
-    .debts-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .section-header {
-      display: flex;
-      justify-content: between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .section-header h3 {
-      margin: 0;
-      color: #0d6efd;
-    }
-  </style>
+  /* Summary Cards */
+  .summary-cards { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 20px; 
+    margin: 20px auto; 
+    max-width: 1200px;
+  }
+  .summary-card { 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 10px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    text-align: center;
+    border-left: 4px solid;
+  }
+  .summary-card.emi { border-left-color: #f44336; }
+  .summary-card.roi { border-left-color: #2196F3; }
+  .summary-card.total { border-left-color: #FF9800; }
+  .summary-card.pending { border-left-color: #6c757d; }
+  .summary-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; text-transform: uppercase; }
+  .summary-card .value { font-size: 24px; font-weight: bold; }
+  .emi .value { color: #f44336; }
+  .roi .value { color: #2196F3; }
+  .total .value { color: #FF9800; }
+  .pending .value { color: #6c757d; }
+  
+  /* Tabs */
+  .tabs { 
+    display: flex; 
+    margin: 20px auto; 
+    max-width: 1200px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .tab { 
+    padding: 15px 20px; 
+    cursor: pointer; 
+    border: none; 
+    background: #f8f9fa; 
+    flex: 1; 
+    text-align: center;
+    font-weight: 500;
+  }
+  .tab.active { 
+    background: #2196F3; 
+    color: white; 
+  }
+  
+  /* Action Buttons */
+  .action-buttons { 
+    max-width: 1200px; 
+    margin: 20px auto; 
+    display: flex; 
+    gap: 10px; 
+  }
+  .btn { 
+    padding: 12px 20px; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-size: 14px; 
+    font-weight: 500;
+  }
+  .add-btn { background: #4CAF50; color: white; }
+  .bank-btn { background: #2196F3; color: white; }
+  .investor-btn { background: #FF9800; color: white; }
+  .cancel-btn { background: #6c757d; color: white; }
+  
+  /* Forms */
+  .form-container { 
+    max-width: 1200px; 
+    margin: 20px auto; 
+  }
+  #bankForm, #investorForm { 
+    display: none; 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+  }
+  .form-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+  }
+  .form-group { margin-bottom: 15px; }
+  .form-group.full-width { grid-column: 1 / -1; }
+  .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
+  .form-group input, .form-group select, .form-group textarea { 
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid #ddd; 
+    border-radius: 5px; 
+    font-size: 14px; 
+  }
+  .form-group textarea { height: 80px; resize: vertical; }
+  .form-group.checkbox { display: flex; align-items: center; gap: 10px; }
+  .form-group.checkbox input { width: auto; }
+  .form-buttons { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 20px; 
+    grid-column: 1 / -1; 
+  }
+  
+  /* Tables */
+  .table-container { 
+    max-width: 1200px; 
+    margin: 20px auto; 
+  }
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    background: #fff; 
+    border-radius: 10px; 
+    overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    margin-bottom: 30px;
+  }
+  th, td { 
+    padding: 12px; 
+    border-bottom: 1px solid #eee; 
+    text-align: left; 
+  }
+  th { 
+    background: #2196F3; 
+    color: white; 
+    font-weight: 600; 
+  }
+  
+  /* Color Coding */
+  .bank-row { background: #f0f8ff; }
+  .investor-row { background: #fffaf0; }
+  
+  /* Action Buttons in Table */
+  .action-cell { white-space: nowrap; }
+  .edit-btn { background: #2196F3; color: white; padding: 6px 12px; font-size: 12px; }
+  .delete-btn { background: #f44336; color: white; padding: 6px 12px; font-size: 12px; }
+  
+  /* Status Badges */
+  .status-badge { 
+    padding: 4px 8px; 
+    border-radius: 12px; 
+    font-size: 12px; 
+    font-weight: 500; 
+  }
+  .status-skipped { background: #ffcccc; color: #721c24; }
+  .status-active { background: #d4edda; color: #155724; }
+  
+  /* Loading States */
+  .loading { text-align: center; padding: 40px; color: #6c757d; }
+  .error-message { 
+    background: #f8d7da; 
+    color: #721c24; 
+    padding: 15px; 
+    border-radius: 5px; 
+    margin: 10px 0; 
+    text-align: center; 
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .summary-cards { grid-template-columns: 1fr; }
+    .tabs { flex-direction: column; }
+    table { font-size: 14px; }
+    th, td { padding: 8px; }
+  }
+</style>
 </head>
 <body>
-  <div class="debts-container">
-    <h2>Debts Management</h2>
 
-    <!-- BANK FINANCE SECTION -->
-    <section class="debts-section">
-      <div class="section-header">
-        <h3>Bank Finance</h3>
-        <button class="btn add-btn" onclick="showBankForm()">Add Bank Loan</button>
-      </div>
+<!-- Header Section -->
+<h1>Debt & Investor Management</h1>
 
-      <div id="bankForm" class="modal-form" style="display:none;">
-        <h4 id="bankFormTitle">Add Bank Loan</h4>
-        <input type="hidden" id="bankId">
-        <label>Bank Name:</label>
-        <input type="text" id="bankName" placeholder="Enter bank name">
-        <label>Principal Amount (₹):</label>
-        <input type="number" id="bankPrincipal" placeholder="Enter principal amount">
-        <label>Monthly EMI (₹):</label>
-        <input type="number" id="bankEMI" placeholder="Enter monthly EMI">
-        <label>Start Date:</label>
-        <input type="date" id="bankStartDate">
-        <label>Remarks:</label>
-        <input type="text" id="bankRemarks" placeholder="Any remarks">
-        <div>
-          <button class="btn add-btn" onclick="saveBankLoan()">Save</button>
-          <button class="btn cancel-btn" onclick="hideBankForm()">Cancel</button>
-        </div>
-      </div>
-
-      <table id="bankTable">
-        <thead>
-          <tr>
-            <th>Bank Name</th>
-            <th>Principal</th>
-            <th>EMI</th>
-            <th>Remaining Principal</th>
-            <th>Start Date</th>
-            <th>Remarks</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Bank entries dynamically loaded here -->
-        </tbody>
-      </table>
-    </section>
-
-    <!-- INVESTORS SECTION -->
-    <section class="debts-section">
-      <div class="section-header">
-        <h3>Investors / Private Lenders</h3>
-        <button class="btn add-btn" onclick="showInvestorForm()">Add Investor</button>
-      </div>
-
-      <div id="investorForm" class="modal-form" style="display:none;">
-        <h4 id="investorFormTitle">Add Investor</h4>
-        <input type="hidden" id="investorId">
-        <label>Investor Name:</label>
-        <input type="text" id="investorName" placeholder="Enter investor name">
-        <label>Principal Amount (₹):</label>
-        <input type="number" id="investorPrincipal" placeholder="Enter principal amount">
-        <label>ROI % per Month:</label>
-        <input type="number" id="investorROI" placeholder="Enter ROI percentage" step="0.1">
-        <label>Withdrawn Principal (₹, optional):</label>
-        <input type="number" id="investorWithdrawn" placeholder="Enter withdrawn amount" value="0">
-        <label>Start Date:</label>
-        <input type="date" id="investorStartDate">
-        <label>Remarks:</label>
-        <input type="text" id="investorRemarks" placeholder="Any remarks">
-        <label style="display: flex; align-items: center; margin: 15px 0;">
-          <input type="checkbox" id="investorSkipROI" style="width: auto; margin-right: 8px;">
-          Skip ROI this month
-        </label>
-        <div>
-          <button class="btn add-btn" onclick="saveInvestor()">Save</button>
-          <button class="btn cancel-btn" onclick="hideInvestorForm()">Cancel</button>
-        </div>
-      </div>
-
-      <table id="investorTable">
-        <thead>
-          <tr>
-            <th>Investor Name</th>
-            <th>Principal</th>
-            <th>ROI %</th>
-            <th>Monthly ROI</th>
-            <th>Withdrawn Principal</th>
-            <th>Remaining Principal</th>
-            <th>Start Date</th>
-            <th>Remarks</th>
-            <th>ROI Skipped</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Investor entries dynamically loaded here -->
-        </tbody>
-      </table>
-    </section>
-
-    <!-- SUMMARY FLOATING CARD -->
-    <div class="summary-card" id="debtSummaryCard">
-      <h4>Monthly Debt Summary</h4>
-      <p>Total EMI: ₹<span id="totalEMI">0</span></p>
-      <p>Total ROI Paid: ₹<span id="totalROI">0</span></p>
-      <p>Total Debt Expense: ₹<span id="totalDebtExpense">0</span></p>
-      <p>Pending ROI (Skipped): ₹<span id="pendingROI">0</span></p>
-    </div>
-
+<!-- Summary Cards -->
+<div class="summary-cards">
+  <div class="summary-card emi">
+    <h3>Total Monthly EMI</h3>
+    <div class="value">₹<span id="totalEMI">0</span></div>
   </div>
+  <div class="summary-card roi">
+    <h3>Monthly ROI Payable</h3>
+    <div class="value">₹<span id="totalROI">0</span></div>
+  </div>
+  <div class="summary-card total">
+    <h3>Total Debt Expense</h3>
+    <div class="value">₹<span id="totalDebtExpense">0</span></div>
+  </div>
+  <div class="summary-card pending">
+    <h3>Skipped ROI (Pending)</h3>
+    <div class="value">₹<span id="pendingROI">0</span></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('bank')">Bank Loans</button>
+  <button class="tab" onclick="switchTab('investor')">Investors</button>
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+  <button class="btn bank-btn" onclick="showBankForm()">+ Add Bank Loan</button>
+  <button class="btn investor-btn" onclick="showInvestorForm()">+ Add Investor</button>
+</div>
+
+<!-- Bank Loan Form -->
+<div class="form-container">
+  <div id="bankForm">
+    <h3>Bank Loan Details</h3>
+    <input type="hidden" id="bankId">
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Bank Name *</label>
+        <input type="text" id="bankName" placeholder="Enter bank name" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Principal Amount (₹) *</label>
+        <input type="number" id="bankPrincipal" step="0.01" min="0" placeholder="Loan amount" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Monthly EMI (₹) *</label>
+        <input type="number" id="bankEMI" step="0.01" min="0" placeholder="Monthly installment" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Start Date *</label>
+        <input type="date" id="bankStartDate" required>
+      </div>
+      
+      <div class="form-group full-width">
+        <label>Remarks</label>
+        <textarea id="bankRemarks" placeholder="Additional notes about this loan..."></textarea>
+      </div>
+    </div>
+    
+    <div class="form-buttons">
+      <button class="btn add-btn" onclick="saveBankLoan()">Save Loan</button>
+      <button class="btn cancel-btn" onclick="hideBankForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Investor Form -->
+<div class="form-container">
+  <div id="investorForm">
+    <h3>Investor Details</h3>
+    <input type="hidden" id="investorId">
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Investor Name *</label>
+        <input type="text" id="investorName" placeholder="Enter investor name" required>
+      </div>
+      
+      <div class="form-group">
+        <label>Principal Amount (₹) *</label>
+        <input type="number" id="investorPrincipal" step="0.01" min="0" placeholder="Investment amount" required>
+      </div>
+      
+      <div class="form-group">
+        <label>ROI Percentage (%)</label>
+        <input type="number" id="investorROI" step="0.01" min="0" max="100" placeholder="Return on investment" value="0">
+      </div>
+      
+      <div class="form-group">
+        <label>Withdrawn Principal (₹)</label>
+        <input type="number" id="investorWithdrawn" step="0.01" min="0" placeholder="Amount withdrawn" value="0">
+      </div>
+      
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" id="investorStartDate">
+      </div>
+      
+      <div class="form-group checkbox">
+        <input type="checkbox" id="investorSkipROI">
+        <label for="investorSkipROI">Skip ROI Payment (Accumulate)</label>
+      </div>
+      
+      <div class="form-group full-width">
+        <label>Remarks</label>
+        <textarea id="investorRemarks" placeholder="Additional notes about this investment..."></textarea>
+      </div>
+    </div>
+    
+    <div class="form-buttons">
+      <button class="btn add-btn" onclick="saveInvestor()">Save Investor</button>
+      <button class="btn cancel-btn" onclick="hideInvestorForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bank Loans Table -->
+<div class="table-container" id="bankSection">
+  <h3>Bank Loans</h3>
+  <table id="bankTable">
+    <thead>
+      <tr>
+        <th>Bank Name</th>
+        <th>Principal Amount</th>
+        <th>Monthly EMI</th>
+        <th>Remaining Principal</th>
+        <th>Start Date</th>
+        <th>Remarks</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Bank loans will be loaded here -->
+    </tbody>
+  </table>
+</div>
+
+<!-- Investors Table -->
+<div class="table-container" id="investorSection">
+  <h3>Investors</h3>
+  <table id="investorTable">
+    <thead>
+      <tr>
+        <th>Investor Name</th>
+        <th>Principal Amount</th>
+        <th>ROI %</th>
+        <th>Monthly ROI</th>
+        <th>Withdrawn</th>
+        <th>Remaining</th>
+        <th>Start Date</th>
+        <th>Remarks</th>
+        <th>ROI Skipped</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Investors will be loaded here -->
+    </tbody>
+  </table>
+</div>
+
 <script src="../js/firebase-config.js"></script>
 <script src="../js/navigation.js"></script>
-  <script src="../js/debts.js"></script>
+<script src="../js/debts.js"></script>
+
+<script>
+// Tab switching functionality
+function switchTab(tabName) {
+  // Update tab UI
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+  
+  // Show/hide sections
+  if (tabName === 'bank') {
+    document.getElementById('bankSection').style.display = 'block';
+    document.getElementById('investorSection').style.display = 'none';
+  } else {
+    document.getElementById('bankSection').style.display = 'none';
+    document.getElementById('investorSection').style.display = 'block';
+  }
+}
+
+// Set default date to today for forms
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('bankStartDate').value = today;
+  document.getElementById('investorStartDate').value = today;
+  
+  // Show bank section by default
+  switchTab('bank');
+});
+</script>
+
 </body>
 </html>

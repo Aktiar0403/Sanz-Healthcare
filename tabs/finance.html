@@ -3,79 +3,338 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sanj Healthcare - Finance</title>
- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../css/design-system.css">
-    <link rel="stylesheet" href="../css/components.css">
+<title>Sanj Healthcare - Finance Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/design-system.css">
+<link rel="stylesheet" href="../css/components.css">
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; }
-  h1 { text-align:center; margin-top:20px; }
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+  h1 { text-align: center; margin-top: 20px; color: #333; }
+  
+  /* Summary Cards */
+  .summary-cards { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+    gap: 20px; 
+    margin: 20px auto; 
+    max-width: 1200px;
+  }
+  .summary-card { 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 10px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    text-align: center;
+    border-left: 4px solid #2196F3;
+  }
+  .summary-card.revenue { border-left-color: #4CAF50; }
+  .summary-card.expenses { border-left-color: #f44336; }
+  .summary-card.profit { border-left-color: #FF9800; }
+  .summary-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; text-transform: uppercase; }
+  .summary-card .value { font-size: 28px; font-weight: bold; }
+  .revenue .value { color: #4CAF50; }
+  .expenses .value { color: #f44336; }
+  .profit .value { color: #FF9800; }
+  
+  /* Charts Container */
+  .charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px auto;
+    max-width: 1200px;
+  }
+  .chart-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .chart-card h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    text-align: center;
+  }
+  
+  /* Action Buttons */
+  .action-buttons { 
+    max-width: 1200px; 
+    margin: 20px auto; 
+    display: flex; 
+    gap: 10px; 
+    flex-wrap: wrap;
+  }
+  .btn { 
+    padding: 12px 20px; 
+    border: none; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-size: 14px; 
+    font-weight: 500;
+  }
+  .add-btn { background: #4CAF50; color: white; }
+  .revenue-btn { background: #4CAF50; color: white; }
+  .expense-btn { background: #f44336; color: white; }
+  .filter-btn { background: #2196F3; color: white; }
+  .report-btn { background: #FF9800; color: white; }
+  .cancel-btn { background: #6c757d; color: white; }
+  
+  /* Finance Form */
+  #financeForm { 
+    display: none; 
+    max-width: 500px; 
+    margin: 20px auto; 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 10px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+  }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
+  .form-group input, .form-group select, .form-group textarea { 
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid #ddd; 
+    border-radius: 5px; 
+    font-size: 14px; 
+  }
+  .form-group textarea { height: 80px; resize: vertical; }
+  .form-buttons { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 20px; 
+  }
+  
+  /* Finance Table */
   .container { max-width: 1200px; margin: 20px auto; }
-  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-  th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
-  th { background: #2196F3; color: white; }
-  .btn { padding: 5px 10px; margin: 2px; border: none; border-radius: 5px; cursor: pointer; }
-  .add-btn { background: #4CAF50; color: white; margin: 10px 0; }
-  .edit-btn { background: #2196F3; color: white; }
-  .delete-btn { background: #f44336; color: white; }
-  #financeForm { display:none; max-width: 400px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-  #financeForm input, #financeForm select { width: 100%; margin: 5px 0; padding: 5px; }
-  #formTitle { text-align:center; margin-bottom:10px; font-weight:bold; }
-  .summary { max-width: 1200px; margin: 20px auto; background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    background: #fff; 
+    border-radius: 10px; 
+    overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+  }
+  th, td { 
+    padding: 12px; 
+    border-bottom: 1px solid #eee; 
+    text-align: left; 
+  }
+  th { 
+    background: #2196F3; 
+    color: white; 
+    font-weight: 600; 
+    cursor: pointer;
+  }
+  th:hover { background: #1976D2; }
+  
+  /* Color Coding */
+  .revenue-row { background: #f0f9f0; }
+  .expense-row { background: #fef0f0; }
+  .type-badge { 
+    padding: 4px 8px; 
+    border-radius: 12px; 
+    font-size: 12px; 
+    font-weight: 500; 
+  }
+  .type-revenue { background: #d4edda; color: #155724; }
+  .type-expense { background: #f8d7da; color: #721c24; }
+  
+  /* Action Buttons in Table */
+  .action-cell { white-space: nowrap; }
+  .edit-btn { background: #2196F3; color: white; padding: 6px 12px; }
+  .delete-btn { background: #f44336; color: white; padding: 6px 12px; }
+  
+  /* Filter Section */
+  #filterSection { 
+    display: none; 
+    max-width: 1200px; 
+    margin: 20px auto; 
+    background: #fff; 
+    padding: 20px; 
+    border-radius: 10px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+  }
+  .filter-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    gap: 15px; 
+  }
+  
+  /* Loading States */
+  .loading { text-align: center; padding: 40px; color: #6c757d; }
+  .error-message { 
+    background: #f8d7da; 
+    color: #721c24; 
+    padding: 15px; 
+    border-radius: 5px; 
+    margin: 10px 0; 
+    text-align: center; 
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .charts-container { grid-template-columns: 1fr; }
+    .summary-cards { grid-template-columns: 1fr; }
+    .action-buttons { flex-direction: column; }
+  }
 </style>
 </head>
 <body>
 
+<!-- Header Section -->
 <h1>Finance Management</h1>
-<button class="btn add-btn" onclick="showAddFinanceForm()">+ Add Finance Entry</button>
 
-<div id="financeForm">
-  <div id="formTitle">Add Finance Entry</div>
-  <input type="hidden" id="financeId">
-  <select id="type">
-    <option value="Revenue">Revenue</option>
-    <option value="Expense">Expense</option>
-  </select>
-  <select id="productSelect">
-    <option value="">--Select Product (optional)--</option>
-  </select>
-  <input type="text" id="category" placeholder="Category">
-  <input type="number" id="amount" placeholder="Amount">
-  <input type="date" id="date">
-  <input type="text" id="notes" placeholder="Notes">
-  <button class="btn add-btn" onclick="saveFinance()">Save</button>
-  <button class="btn delete-btn" onclick="hideFinanceForm()">Cancel</button>
+<!-- Summary Cards -->
+<div class="summary-cards">
+  <div class="summary-card revenue">
+    <h3>Total Revenue</h3>
+    <div class="value">₹<span id="totalRevenue">0</span></div>
+  </div>
+  <div class="summary-card expenses">
+    <h3>Total Expenses</h3>
+    <div class="value">₹<span id="totalExpenses">0</span></div>
+  </div>
+  <div class="summary-card profit">
+    <h3>Net Profit</h3>
+    <div class="value">₹<span id="netProfit">0</span></div>
+  </div>
+  <div class="summary-card">
+    <h3>This Month</h3>
+    <div class="value">₹<span id="monthlyProfit">0</span></div>
+  </div>
 </div>
 
+<!-- Charts Section -->
+<div class="charts-container">
+  <div class="chart-card">
+    <h3>Revenue vs Expenses (Last 6 Months)</h3>
+    <canvas id="revenueExpenseChart" width="400" height="200"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3>Expense Categories</h3>
+    <canvas id="expenseCategoryChart" width="400" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+  <button class="btn add-btn" onclick="showFinanceForm('Revenue')">+ Add Revenue</button>
+  <button class="btn expense-btn" onclick="showFinanceForm('Expense')">+ Add Expense</button>
+  <button class="btn filter-btn" onclick="toggleFilterSection()">🔍 Filter Transactions</button>
+  <button class="btn report-btn" onclick="generateFinancialReport()">📊 Generate Report</button>
+</div>
+
+<!-- Filter Section -->
+<div id="filterSection">
+  <h3>Filter Transactions</h3>
+  <div class="filter-grid">
+    <div class="form-group">
+      <label>Type</label>
+      <select id="filterType" onchange="applyFilters()">
+        <option value="">All Types</option>
+        <option value="Revenue">Revenue</option>
+        <option value="Expense">Expense</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="filterCategory" onchange="applyFilters()">
+        <option value="">All Categories</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Date Range</label>
+      <input type="date" id="filterStartDate" onchange="applyFilters()">
+      <input type="date" id="filterEndDate" onchange="applyFilters()" style="margin-top: 5px;">
+    </div>
+    <div class="form-group">
+      <label>Amount Range</label>
+      <input type="number" id="filterMinAmount" placeholder="Min" onchange="applyFilters()" style="margin-bottom: 5px;">
+      <input type="number" id="filterMaxAmount" placeholder="Max" onchange="applyFilters()">
+    </div>
+  </div>
+</div>
+
+<!-- Finance Form -->
+<div id="financeForm">
+  <h3 id="formTitle">Add Finance Entry</h3>
+  <input type="hidden" id="financeId">
+  <input type="hidden" id="entryType">
+  
+  <div class="form-group">
+    <label>Type</label>
+    <select id="type" onchange="updateFormForType()" required>
+      <option value="Revenue">Revenue</option>
+      <option value="Expense">Expense</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label id="categoryLabel">Revenue Category</label>
+    <select id="category" required>
+      <!-- Categories will be populated dynamically -->
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label>Product (Optional)</label>
+    <select id="productSelect">
+      <option value="">-- Select Product --</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label>Amount (₹) *</label>
+    <input type="number" id="amount" step="0.01" min="0" required>
+  </div>
+  
+  <div class="form-group">
+    <label>Date *</label>
+    <input type="date" id="date" required>
+  </div>
+  
+  <div class="form-group">
+    <label>Description / Notes</label>
+    <textarea id="notes" placeholder="Add details about this transaction..."></textarea>
+  </div>
+  
+  <div class="form-buttons">
+    <button class="btn add-btn" onclick="saveFinance()">Save Entry</button>
+    <button class="btn cancel-btn" onclick="hideFinanceForm()">Cancel</button>
+  </div>
+</div>
+
+<!-- Finance Table -->
 <div class="container">
   <table id="financeTable">
     <thead>
       <tr>
-        <th>Type</th>
-        <th>Product</th>
-        <th>Category</th>
-        <th>Amount</th>
-        <th>Date</th>
-        <th>Notes</th>
+        <th data-sort="date">Date</th>
+        <th data-sort="type">Type</th>
+        <th data-sort="category">Category</th>
+        <th data-sort="productName">Product</th>
+        <th data-sort="amount">Amount</th>
+        <th>Description</th>
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="financeTableBody">
+      <!-- Dynamic content will be loaded here -->
+    </tbody>
   </table>
 </div>
 
-<div class="summary">
-  <h2>Summary</h2>
-  <p>Total Revenue: ₹<span id="totalRevenue">0</span></p>
-  <p>Total Expenses: ₹<span id="totalExpenses">0</span></p>
-  <p><strong>Profit: ₹<span id="profit">0</span></strong></p>
-</div>
+<!-- Include Chart.js for financial charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script src="../js/firebase-config.js"></script>
 <script src="../js/navigation.js"></script>
 <script src="../js/finance.js"></script>
+
 </body>
 </html>
