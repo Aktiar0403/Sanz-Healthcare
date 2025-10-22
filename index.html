@@ -644,19 +644,70 @@
         });
 
         // Login Functionality
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-                console.log('User signed in:', userCredential.user);
-            } catch (error) {
-                alert('Login failed: ' + error.message);
-            }
-        });
+        // In your index.html, replace the login form handler with this:
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    try {
+        // Show loading state
+        const loginBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = loginBtn.textContent;
+        loginBtn.textContent = 'Signing in...';
+        loginBtn.disabled = true;
+        
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+        console.log('✅ User signed in:', userCredential.user);
+        
+    } catch (error) {
+        console.error('❌ Login failed:', error);
+        
+        // Show specific error messages
+        let errorMessage = 'Login failed: ' + error.message;
+        
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = 'No account found with this email. Please sign up first.';
+        } else if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Incorrect password. Please try again.';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Invalid email address.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = 'Email/password login is not enabled. Please check Firebase Authentication settings.';
+        }
+        
+        alert(errorMessage);
+        
+        // Reset button
+        const loginBtn = e.target.querySelector('button[type="submit"]');
+        loginBtn.textContent = originalText;
+        loginBtn.disabled = false;
+    }
+});
+
+// Add a demo user creation function for testing
+async function createDemoUser() {
+    try {
+        // First, try to create a demo user
+        const email = 'admin@sanjhealthcare.com';
+        const password = 'admin123';
+        
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        console.log('✅ Demo user created:', userCredential.user);
+        alert('Demo user created! You can now login with:\nEmail: admin@sanjhealthcare.com\nPassword: admin123');
+        
+    } catch (error) {
+        if (error.code === 'auth/email-already-in-use') {
+            console.log('ℹ️ Demo user already exists');
+        } else {
+            console.error('❌ Error creating demo user:', error);
+        }
+    }
+}
+
+// Add this button to your login form for testing:
+// <button type="button" onclick="createDemoUser()" style="margin-top: 10px; background: #666; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">Create Demo Account</button>);
 
         // Logout Functionality
         function logout() {

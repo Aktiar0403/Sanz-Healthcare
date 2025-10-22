@@ -1,6 +1,4 @@
-// firebase-config.js - CORRECTED VERSION (No import statements)
-
-// Your web app's Firebase configuration
+// firebase-config.js - USING YOUR REAL FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
   authDomain: "sanj-healthcare-77e02.firebaseapp.com",
@@ -15,32 +13,27 @@ const firebaseConfig = {
 try {
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase initialized successfully');
-    } else {
-        firebase.app(); // if already initialized, use that one
-        console.log('🔥 Firebase already initialized');
+        console.log('🔥 Firebase initialized successfully with your project');
     }
 } catch (error) {
     console.error('🔥 Firebase initialization error:', error);
 }
 
-
-
 // Auto-initialize products on first load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 App loaded, checking Firebase...');
     
-    // Wait for auth to initialize, then check products
+    // Wait for auth to initialize
     setTimeout(() => {
         if (typeof initializeProducts === 'function') {
             if (firebase.auth().currentUser) {
                 console.log('👤 User logged in, initializing products...');
                 initializeProducts();
             } else {
-                console.log('👤 No user logged in, products will init after login');
+                console.log('👤 No user logged in yet');
             }
         }
-    }, 3000);
+    }, 2000);
 });
 
 // Enhanced temporary message function
@@ -75,4 +68,4 @@ function showTemporaryMessage(message, type = 'info') {
     }, 4000);
 }
 
-console.log('📄 Firebase config loaded');
+console.log('📄 Firebase config loaded with project: sanj-healthcare-77e02');
