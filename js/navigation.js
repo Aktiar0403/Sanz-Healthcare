@@ -1,145 +1,140 @@
-// navigation.js - App navigation functionality
-console.log('🧭 Navigation module loaded');
+// Navigation and Tab Management for Sanj Healthcare App
 
-// Global navigation functions
-window.switchTab = function(tabName) {
-    console.log('🔄 Switching to tab:', tabName);
-    
-    try {
-        // Update active nav link
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-        });
-        
-        const activeLink = document.querySelector(`[data-tab="${tabName}"]`);
-        if (activeLink) {
-            activeLink.classList.add('active');
-        }
-        
-        // Update active tab content
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        
-        const activeTab = document.getElementById(tabName);
-        if (activeTab) {
-            activeTab.classList.add('active');
-        }
-        
-        // Load tab content if not already loaded
-        loadTabContent(tabName);
-        
-    } catch (error) {
-        console.error('❌ Error switching tab:', error);
-        showTemporaryMessage('Error loading tab: ' + error.message, 'error');
-    }
-}
+// DOM Elements
+const contentArea = document.getElementById('content');
+const navLinks = document.querySelectorAll('.nav-link');
+const currentTabTitle = document.getElementById('current-tab-title');
 
-// Load Tab Content Dynamically
-async function loadTabContent(tabName) {
-    const tabContent = document.getElementById(tabName);
-    
-    // Skip if already loaded or is dashboard
-    if (tabContent.querySelector('.loaded') || tabName === 'dashboard') {
-        return;
-    }
-    
-    try {
-        console.log(`📥 Loading ${tabName} content...`);
-        
-        // Show loading state
-        tabContent.innerHTML = `
-            <div class="loading">
-                <h3>Loading ${tabName.replace(/([A-Z])/g, ' $1')}...</h3>
-                <p>Please wait while we load the module</p>
-                <div style="margin-top: 20px;">
-                    <div style="width: 100%; height: 4px; background: #f0f0f0; border-radius: 2px;">
-                        <div style="width: 100%; height: 100%; background: #2196F3; border-radius: 2px; animation: pulse 1.5s infinite;"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Load the HTML content
-        const response = await fetch(`tabs/${tabName}.html`);
-        if (!response.ok) {
-            throw new Error(`Failed to load ${tabName}.html: ${response.status}`);
-        }
-        const html = await response.text();
-        
-        // Inject the content
-        tabContent.innerHTML = html;
-        tabContent.classList.add('loaded');
-        
-        // Load the corresponding JavaScript
-        await loadJSModule(tabName);
-        
-        console.log(`✅ ${tabName} content loaded successfully`);
-        
-    } catch (error) {
-        console.error(`❌ Error loading ${tabName}:`, error);
-        tabContent.innerHTML = `
-            <div class="error-message">
-                <h3>Error Loading ${tabName.replace(/([A-Z])/g, ' $1')}</h3>
-                <p>${error.message}</p>
-                <button onclick="loadTabContent('${tabName}')" style="margin-top: 10px; padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    🔄 Try Again
-                </button>
-            </div>
-        `;
-    }
-}
-
-// Load JavaScript Module
-async function loadJSModule(tabName) {
-    try {
-        console.log(`📜 Loading ${tabName}.js...`);
-        
-        // Remove existing script if any
-        const existingScript = document.getElementById(`script-${tabName}`);
-        if (existingScript) {
-            existingScript.remove();
-        }
-        
-        // Create new script element
-        const script = document.createElement('script');
-        script.id = `script-${tabName}`;
-        script.src = `js/${tabName}.js`;
-        
-        // Wait for script to load
-        await new Promise((resolve, reject) => {
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-        
-        console.log(`✅ ${tabName}.js loaded successfully`);
-        
-    } catch (error) {
-        console.error(`❌ Error loading ${tabName}.js:`, error);
-        throw new Error(`Failed to load ${tabName} functionality`);
-    }
-}
-
-// Mobile menu functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const sidebar = document.getElementById('sidebar');
-    
-    if (mobileMenuToggle && sidebar) {
-        mobileMenuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-        });
-    }
-    
-    // Close mobile menu when clicking on a link
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove('active');
-            }
-        });
+// Initialize navigation system
+function initNavigation() {
+  // Add event listeners to all navigation links
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Get the tab name from data attribute
+      const tabName = this.getAttribute('data-tab');
+      
+      // Load the corresponding tab content
+      loadTabContent(tabName);
+      
+      // Update active state
+      setActiveTab(this);
     });
-});
+  });
+  
+  // Load dashboard by default
+  loadTabContent('dashboard');
+}
 
-console.log('✅ Navigation system ready');
+// Set active tab in sidebar
+function setActiveTab(activeLink) {
+  // Remove active class from all links
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+  });
+  
+  // Add active class to clicked link
+  activeLink.classList.add('active');
+}
+
+// Load tab content dynamically
+function loadTabContent(tabName) {
+  // Update current tab title
+  currentTabTitle.textContent = capitalizeFirstLetter(tabName);
+  
+  // If it's the dashboard, show the welcome message
+  if (tabName === 'dashboard') {
+    showDashboardContent();
+    return;
+  }
+  
+  // For other tabs, try to load from /tabs/ folder
+  const tabPath = `tabs/${tabName}.html`;
+  
+  fetch(tabPath)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Tab not found');
+      }
+      return response.text();
+    })
+    .then(html => {
+      contentArea.innerHTML = html;
+      
+      // Load the corresponding JS file if it exists
+      loadTabScript(tabName);
+    })
+    .catch(error => {
+      console.log(`Tab ${tabName} not implemented yet:`, error);
+      showPlaceholderContent(tabName);
+    });
+}
+
+// Show dashboard content
+function showDashboardContent() {
+  contentArea.innerHTML = `
+    <div class="welcome-message">
+      <h2>Welcome to Sanj Healthcare App</h2>
+      <p>Select a tab from the sidebar to manage your healthcare business.</p>
+      <div class="dashboard-stats">
+        <div class="stat-card">
+          <h3>Products</h3>
+          <p class="stat-value">0</p>
+          <p class="stat-label">Total Products</p>
+        </div>
+        <div class="stat-card">
+          <h3>Stock</h3>
+          <p class="stat-value">0</p>
+          <p class="stat-label">Items in Stock</p>
+        </div>
+        <div class="stat-card">
+          <h3>Customers</h3>
+          <p class="stat-value">0</p>
+          <p class="stat-label">Total Customers</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// Show placeholder content for tabs that aren't implemented yet
+function showPlaceholderContent(tabName) {
+  contentArea.innerHTML = `
+    <div class="placeholder-content">
+      <h2>${capitalizeFirstLetter(tabName)} Management</h2>
+      <p>This feature is under development and will be available soon.</p>
+      <div class="placeholder-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.5 12H14.5M9.5 15H14.5M9.5 9H14.5M5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21Z" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+// Load tab-specific JavaScript
+function loadTabScript(tabName) {
+  const scriptPath = `js/tabs/${tabName}.js`;
+  
+  // Remove existing tab script if any
+  const existingScript = document.querySelector(`script[data-tab="${tabName}"]`);
+  if (existingScript) {
+    existingScript.remove();
+  }
+  
+  // Create and load new script
+  const script = document.createElement('script');
+  script.src = scriptPath;
+  script.setAttribute('data-tab', tabName);
+  script.onerror = function() {
+    console.log(`Script for ${tabName} not found`);
+  };
+  
+  document.head.appendChild(script);
+}
+
+// Helper function to capitalize first letter
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}

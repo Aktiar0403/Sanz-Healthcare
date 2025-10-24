@@ -1,4 +1,4 @@
-// firebase-config.js - CORRECTED VERSION
+// Firebase v8 Configuration for Sanj Healthcare App
 const firebaseConfig = {
   apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
   authDomain: "sanj-healthcare-77e02.firebaseapp.com",
@@ -10,65 +10,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-try {
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase initialized successfully');
-    } else {
-        firebase.app(); // Use existing app
-        console.log('🔥 Firebase app already exists');
-    }
-} catch (error) {
-    console.error('🔥 Firebase initialization error:', error);
-}
+firebase.initializeApp(firebaseConfig);
 
-// Auto-initialize products on first load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 App loaded, checking Firebase...');
-    
-    // Wait for auth to initialize
-    setTimeout(() => {
-        if (typeof initializeProducts === 'function') {
-            if (firebase.auth().currentUser) {
-                console.log('👤 User logged in, initializing products...');
-                initializeProducts();
-            } else {
-                console.log('👤 No user logged in yet');
-            }
-        }
-    }, 2000);
-});
+// Initialize Firebase services
+const db = firebase.firestore();
+const auth = firebase.auth();
 
-// Enhanced temporary message function
-function showTemporaryMessage(message, type = 'info') {
-    const messageDiv = document.createElement('div');
-    messageDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 5px;
-        color: white;
-        z-index: 1000;
-        font-weight: bold;
-        transition: opacity 0.3s;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `;
-    
-    messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : 
-                                      type === 'error' ? '#dc3545' : '#17a2b8';
-    messageDiv.textContent = message;
-    
-    document.body.appendChild(messageDiv);
-    
-    setTimeout(() => {
-        messageDiv.style.opacity = '0';
-        setTimeout(() => {
-            if (messageDiv.parentNode) {
-                document.body.removeChild(messageDiv);
-            }
-        }, 300);
-    }, 4000);
-}
-
-console.log('📄 Firebase config loaded');
+// Enable offline persistence for Firestore
+db.enablePersistence()
+  .catch((err) => {
+    console.log("Firebase persistence error: ", err);
+  });
