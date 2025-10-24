@@ -3,99 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sanj Healthcare App</title>
+    <title>Sanj Healthcare - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
-    <link rel="manifest" href="manifest.json">
-    <!-- Firebase v8 CDN -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-<body>
-    <!-- Login Page -->
-    <div id="login-page" class="page">
-        <div class="login-container">
-            <div class="login-header">
-                <img src="assets/logo.png" alt="Sanj Healthcare Logo" class="logo">
-                <h1>Sanj Healthcare App</h1>
-                <p>Business Management System</p>
+<body class="bg-gray-50">
+    <!-- App Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-blue-800 text-white shadow-lg">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold">Sanj Healthcare</h1>
+                <p class="text-blue-200 text-sm mt-2">Business Management System</p>
             </div>
-            <form id="login-form" class="login-form">
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
+            
+            <nav class="mt-8">
+                <div class="px-4 space-y-2">
+                    <a href="#" class="nav-link active" data-tab="dashboard">
+                        <i class="fas fa-tachometer-alt w-6"></i>
+                        Dashboard
+                    </a>
+                    <a href="#" class="nav-link" data-tab="products">
+                        <i class="fas fa-pills w-6"></i>
+                        Products
+                    </a>
+                    <a href="#" class="nav-link" data-tab="stock">
+                        <i class="fas fa-boxes w-6"></i>
+                        Stock
+                    </a>
+                    <a href="#" class="nav-link" data-tab="customers">
+                        <i class="fas fa-users w-6"></i>
+                        Customers
+                    </a>
+                    <a href="#" class="nav-link" data-tab="finance">
+                        <i class="fas fa-chart-line w-6"></i>
+                        Finance
+                    </a>
+                    <a href="#" class="nav-link" data-tab="debts">
+                        <i class="fas fa-hand-holding-usd w-6"></i>
+                        Debts
+                    </a>
+                    <a href="#" class="nav-link" data-tab="marketing">
+                        <i class="fas fa-handshake w-6"></i>
+                        Marketing
+                    </a>
+                    <a href="#" class="nav-link" data-tab="reports">
+                        <i class="fas fa-chart-bar w-6"></i>
+                        Reports
+                    </a>
                 </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+            </nav>
+            
+            <div class="absolute bottom-0 w-64 p-4 border-t border-blue-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate" id="user-email">user@example.com</p>
+                        <button id="logout-btn" class="text-blue-200 text-xs hover:text-white">Logout</button>
+                    </div>
                 </div>
-                <button type="submit" class="btn-login">Login</button>
-                <div id="login-error" class="error-message"></div>
-            </form>
-            <div class="login-footer">
-                <p>Secure healthcare business management</p>
             </div>
         </div>
-    </div>
 
-    <!-- Dashboard -->
-    <div id="dashboard-page" class="page hidden">
-        <div class="dashboard-container">
-            <!-- Sidebar Navigation -->
-            <aside class="sidebar">
-                <div class="sidebar-header">
-                    <img src="assets/logo.png" alt="Sanj Healthcare Logo" class="logo">
-                    <h2>Sanj Healthcare</h2>
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-sm border-b">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800" id="current-tab-title">Dashboard</h2>
+                        <p class="text-gray-600 text-sm">Welcome to Sanj Healthcare Management System</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-500" id="current-date"></span>
+                    </div>
                 </div>
-                <nav class="sidebar-nav">
-                    <ul>
-                        <li><a href="#" data-tab="dashboard" class="nav-link active">Dashboard</a></li>
-                        <li><a href="#" data-tab="products" class="nav-link">Products</a></li>
-                        <li><a href="#" data-tab="stock" class="nav-link">Stock</a></li>
-                        <li><a href="#" data-tab="finance" class="nav-link">Finance</a></li>
-                        <li><a href="#" data-tab="marketing" class="nav-link">Marketing</a></li>
-                        <li><a href="#" data-tab="debts" class="nav-link">Debts</a></li>
-                        <li><a href="#" data-tab="customers" class="nav-link">Customers</a></li>
-                        <li><a href="#" data-tab="reports" class="nav-link">Reports</a></li>
-                    </ul>
-                </nav>
-            </aside>
+            </header>
 
-            <!-- Main Content Area -->
-            <main class="main-content">
-                <!-- Top Bar -->
-                <header class="topbar">
-                    <div class="topbar-left">
-                        <h1 id="current-tab-title">Dashboard</h1>
-                    </div>
-                    <div class="topbar-right">
-                        <div class="user-info">
-                            <span id="user-email">user@example.com</span>
-                            <button id="logout-btn" class="btn-logout">Logout</button>
-                        </div>
-                    </div>
-                </header>
-
-                <!-- Dynamic Content Container -->
-                <div id="content" class="content-area">
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto p-6">
+                <div id="content">
+                    <!-- Dashboard Content -->
                     <div class="welcome-message">
-                        <h2>Welcome to Sanj Healthcare App</h2>
-                        <p>Select a tab from the sidebar to manage your healthcare business.</p>
-                        <div class="dashboard-stats">
-                            <div class="stat-card">
-                                <h3>Products</h3>
-                                <p class="stat-value">0</p>
-                                <p class="stat-label">Total Products</p>
+                        <div class="bg-white rounded-lg shadow-sm border p-8 text-center">
+                            <i class="fas fa-heartbeat text-6xl text-blue-600 mb-4"></i>
+                            <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome to Sanj Healthcare App</h2>
+                            <p class="text-gray-600 text-lg mb-8">Select a tab from the sidebar to manage your healthcare business operations.</p>
+                            
+                            <div class="dashboard-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                                <div class="stat-card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-semibold">Products</h3>
+                                            <p class="stat-value text-3xl font-bold">0</p>
+                                            <p class="stat-label text-blue-100">Total Products</p>
+                                        </div>
+                                        <i class="fas fa-pills text-3xl opacity-80"></i>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card bg-gradient-to-r from-green-500 to-green-600 text-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-semibold">Stock</h3>
+                                            <p class="stat-value text-3xl font-bold">0</p>
+                                            <p class="stat-label text-green-100">Items in Stock</p>
+                                        </div>
+                                        <i class="fas fa-boxes text-3xl opacity-80"></i>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-semibold">Customers</h3>
+                                            <p class="stat-value text-3xl font-bold">0</p>
+                                            <p class="stat-label text-purple-100">Total Customers</p>
+                                        </div>
+                                        <i class="fas fa-users text-3xl opacity-80"></i>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="text-lg font-semibold">Revenue</h3>
+                                            <p class="stat-value text-3xl font-bold">₹0</p>
+                                            <p class="stat-label text-orange-100">This Month</p>
+                                        </div>
+                                        <i class="fas fa-rupee-sign text-3xl opacity-80"></i>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="stat-card">
-                                <h3>Stock</h3>
-                                <p class="stat-value">0</p>
-                                <p class="stat-label">Items in Stock</p>
-                            </div>
-                            <div class="stat-card">
-                                <h3>Customers</h3>
-                                <p class="stat-value">0</p>
-                                <p class="stat-label">Total Customers</p>
+                            
+                            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                                <div class="bg-white border rounded-lg p-6">
+                                    <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+                                    <div class="space-y-3">
+                                        <button class="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-plus-circle text-blue-600 mr-3"></i>
+                                            Add New Product
+                                        </button>
+                                        <button class="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-cart-plus text-green-600 mr-3"></i>
+                                            Record Sale
+                                        </button>
+                                        <button class="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-file-invoice-dollar text-purple-600 mr-3"></i>
+                                            Add Expense
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white border rounded-lg p-6">
+                                    <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+                                    <div class="space-y-3 text-sm text-gray-600">
+                                        <p>No recent activity</p>
+                                        <p class="text-xs text-gray-400">Activities will appear here as you use the system</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -104,23 +173,24 @@
         </div>
     </div>
 
-    <!-- JavaScript Files -->
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- App Scripts -->
     <script src="js/firebase-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/navigation.js"></script>
-    
-    <!-- Service Worker Registration -->
+
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(function(registration) {
-                        console.log('ServiceWorker registration successful');
-                    }, function(err) {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
-        }
+        // Set current date
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-IN', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
     </script>
 </body>
 </html>

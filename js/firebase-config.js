@@ -21,3 +21,7 @@ db.enablePersistence()
   .catch((err) => {
     console.log("Firebase persistence error: ", err);
   });
+
+// Make Firebase instances globally available
+window.db = db;
+window.auth = auth;

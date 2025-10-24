@@ -41,7 +41,9 @@ function setActiveTab(activeLink) {
 // Load tab content dynamically
 function loadTabContent(tabName) {
   // Update current tab title
-  currentTabTitle.textContent = capitalizeFirstLetter(tabName);
+  if (currentTabTitle) {
+    currentTabTitle.textContent = capitalizeFirstLetter(tabName);
+  }
   
   // If it's the dashboard, show the welcome message
   if (tabName === 'dashboard') {
@@ -52,65 +54,104 @@ function loadTabContent(tabName) {
   // For other tabs, try to load from /tabs/ folder
   const tabPath = `tabs/${tabName}.html`;
   
-  fetch(tabPath)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Tab not found');
-      }
-      return response.text();
-    })
-    .then(html => {
-      contentArea.innerHTML = html;
-      
-      // Load the corresponding JS file if it exists
-      loadTabScript(tabName);
-    })
-    .catch(error => {
-      console.log(`Tab ${tabName} not implemented yet:`, error);
-      showPlaceholderContent(tabName);
-    });
+  if (contentArea) {
+    fetch(tabPath)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Tab not found');
+        }
+        return response.text();
+      })
+      .then(html => {
+        contentArea.innerHTML = html;
+        
+        // Load the corresponding JS file if it exists
+        loadTabScript(tabName);
+      })
+      .catch(error => {
+        console.log(`Tab ${tabName} not implemented yet:`, error);
+        showPlaceholderContent(tabName);
+      });
+  }
 }
 
 // Show dashboard content
 function showDashboardContent() {
-  contentArea.innerHTML = `
-    <div class="welcome-message">
-      <h2>Welcome to Sanj Healthcare App</h2>
-      <p>Select a tab from the sidebar to manage your healthcare business.</p>
-      <div class="dashboard-stats">
-        <div class="stat-card">
-          <h3>Products</h3>
-          <p class="stat-value">0</p>
-          <p class="stat-label">Total Products</p>
-        </div>
-        <div class="stat-card">
-          <h3>Stock</h3>
-          <p class="stat-value">0</p>
-          <p class="stat-label">Items in Stock</p>
-        </div>
-        <div class="stat-card">
-          <h3>Customers</h3>
-          <p class="stat-value">0</p>
-          <p class="stat-label">Total Customers</p>
+  if (contentArea) {
+    contentArea.innerHTML = `
+      <div class="welcome-message">
+        <div class="bg-white rounded-lg shadow-sm border p-8 text-center">
+          <i class="fas fa-heartbeat text-6xl text-blue-600 mb-4"></i>
+          <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome to Sanj Healthcare App</h2>
+          <p class="text-gray-600 text-lg mb-8">Select a tab from the sidebar to manage your healthcare business operations.</p>
+          
+          <div class="dashboard-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div class="stat-card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold">Products</h3>
+                  <p class="stat-value text-3xl font-bold">0</p>
+                  <p class="stat-label text-blue-100">Total Products</p>
+                </div>
+                <i class="fas fa-pills text-3xl opacity-80"></i>
+              </div>
+            </div>
+            
+            <div class="stat-card bg-gradient-to-r from-green-500 to-green-600 text-white">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold">Stock</h3>
+                  <p class="stat-value text-3xl font-bold">0</p>
+                  <p class="stat-label text-green-100">Items in Stock</p>
+                </div>
+                <i class="fas fa-boxes text-3xl opacity-80"></i>
+              </div>
+            </div>
+            
+            <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold">Customers</h3>
+                  <p class="stat-value text-3xl font-bold">0</p>
+                  <p class="stat-label text-purple-100">Total Customers</p>
+                </div>
+                <i class="fas fa-users text-3xl opacity-80"></i>
+              </div>
+            </div>
+            
+            <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold">Revenue</h3>
+                  <p class="stat-value text-3xl font-bold">₹0</p>
+                  <p class="stat-label text-orange-100">This Month</p>
+                </div>
+                <i class="fas fa-rupee-sign text-3xl opacity-80"></i>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 }
 
 // Show placeholder content for tabs that aren't implemented yet
 function showPlaceholderContent(tabName) {
-  contentArea.innerHTML = `
-    <div class="placeholder-content">
-      <h2>${capitalizeFirstLetter(tabName)} Management</h2>
-      <p>This feature is under development and will be available soon.</p>
-      <div class="placeholder-icon">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9.5 12H14.5M9.5 15H14.5M9.5 9H14.5M5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21Z" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+  if (contentArea) {
+    contentArea.innerHTML = `
+      <div class="placeholder-content text-center py-12">
+        <div class="max-w-md mx-auto">
+          <i class="fas fa-tools text-6xl text-gray-400 mb-4"></i>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">${capitalizeFirstLetter(tabName)} Management</h2>
+          <p class="text-gray-600 mb-6">This feature is under development and will be available soon.</p>
+          <button onclick="loadTabContent('dashboard')" class="btn btn-primary">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+          </button>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
 }
 
 // Load tab-specific JavaScript
@@ -138,3 +179,8 @@ function loadTabScript(tabName) {
 function capitalizeFirstLetter(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+// Make functions globally available
+window.initNavigation = initNavigation;
+window.loadTabContent = loadTabContent;
+window.showDashboardContent = showDashboardContent;
