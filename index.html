@@ -1,289 +1,126 @@
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanj Healthcare App</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- Firebase v8 CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="page">
+        <div class="login-container">
+            <div class="login-header">
+                <img src="assets/logo.png" alt="Sanj Healthcare Logo" class="logo">
+                <h1>Sanj Healthcare App</h1>
+                <p>Business Management System</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+                <div id="login-error" class="error-message"></div>
+            </form>
+            <div class="login-footer">
+                <p>Secure healthcare business management</p>
+            </div>
+        </div>
+    </div>
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f7fa;
-    color: #333;
-    line-height: 1.6;
-}
+    <!-- Dashboard -->
+    <div id="dashboard-page" class="page hidden">
+        <div class="dashboard-container">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/logo.png" alt="Sanj Healthcare Logo" class="logo">
+                    <h2>Sanj Healthcare</h2>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li><a href="#" data-tab="dashboard" class="nav-link active">Dashboard</a></li>
+                        <li><a href="#" data-tab="products" class="nav-link">Products</a></li>
+                        <li><a href="#" data-tab="stock" class="nav-link">Stock</a></li>
+                        <li><a href="#" data-tab="finance" class="nav-link">Finance</a></li>
+                        <li><a href="#" data-tab="marketing" class="nav-link">Marketing</a></li>
+                        <li><a href="#" data-tab="debts" class="nav-link">Debts</a></li>
+                        <li><a href="#" data-tab="customers" class="nav-link">Customers</a></li>
+                        <li><a href="#" data-tab="reports" class="nav-link">Reports</a></li>
+                    </ul>
+                </nav>
+            </aside>
 
-.hidden {
-    display: none !important;
-}
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <!-- Top Bar -->
+                <header class="topbar">
+                    <div class="topbar-left">
+                        <h1 id="current-tab-title">Dashboard</h1>
+                    </div>
+                    <div class="topbar-right">
+                        <div class="user-info">
+                            <span id="user-email">user@example.com</span>
+                            <button id="logout-btn" class="btn-logout">Logout</button>
+                        </div>
+                    </div>
+                </header>
 
-/* Login Page Styles */
-#login-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1e88e5, #0d47a1);
-}
+                <!-- Dynamic Content Container -->
+                <div id="content" class="content-area">
+                    <div class="welcome-message">
+                        <h2>Welcome to Sanj Healthcare App</h2>
+                        <p>Select a tab from the sidebar to manage your healthcare business.</p>
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <h3>Products</h3>
+                                <p class="stat-value">0</p>
+                                <p class="stat-label">Total Products</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3>Stock</h3>
+                                <p class="stat-value">0</p>
+                                <p class="stat-label">Items in Stock</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3>Customers</h3>
+                                <p class="stat-value">0</p>
+                                <p class="stat-label">Total Customers</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
 
-.login-container {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-    padding: 2rem;
-}
-
-.login-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.logo {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 1rem;
-}
-
-.login-header h1 {
-    color: #1e88e5;
-    margin-bottom: 0.5rem;
-}
-
-.login-header p {
-    color: #666;
-    font-size: 0.9rem;
-}
-
-.login-form .form-group {
-    margin-bottom: 1.5rem;
-}
-
-.login-form label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #555;
-}
-
-.login-form input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: border-color 0.3s;
-}
-
-.login-form input:focus {
-    outline: none;
-    border-color: #1e88e5;
-}
-
-.btn-login {
-    width: 100%;
-    padding: 0.75rem;
-    background: #1e88e5;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.btn-login:hover {
-    background: #1565c0;
-}
-
-.error-message {
-    color: #e53935;
-    margin-top: 1rem;
-    text-align: center;
-    font-size: 0.9rem;
-}
-
-.login-footer {
-    margin-top: 2rem;
-    text-align: center;
-    color: #888;
-    font-size: 0.8rem;
-}
-
-/* Dashboard Styles */
-.dashboard-container {
-    display: flex;
-    min-height: 100vh;
-}
-
-/* Sidebar Styles */
-.sidebar {
-    width: 250px;
-    background: #1e293b;
-    color: white;
-    position: fixed;
-    height: 100vh;
-    overflow-y: auto;
-}
-
-.sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid #334155;
-    text-align: center;
-}
-
-.sidebar-header h2 {
-    font-size: 1.2rem;
-    margin-top: 0.5rem;
-}
-
-.sidebar-nav ul {
-    list-style: none;
-    padding: 1rem 0;
-}
-
-.sidebar-nav li {
-    margin-bottom: 0.25rem;
-}
-
-.nav-link {
-    display: block;
-    padding: 0.75rem 1.5rem;
-    color: #cbd5e1;
-    text-decoration: none;
-    transition: all 0.3s;
-    border-left: 3px solid transparent;
-}
-
-.nav-link:hover {
-    background: #334155;
-    color: white;
-}
-
-.nav-link.active {
-    background: #334155;
-    color: white;
-    border-left-color: #1e88e5;
-}
-
-/* Main Content Styles */
-.main-content {
-    flex: 1;
-    margin-left: 250px;
-    width: calc(100% - 250px);
-}
-
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.topbar-left h1 {
-    color: #1e293b;
-    font-size: 1.5rem;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.btn-logout {
-    padding: 0.5rem 1rem;
-    background: #e53935;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.btn-logout:hover {
-    background: #c62828;
-}
-
-/* Content Area Styles */
-.content-area {
-    padding: 2rem;
-    min-height: calc(100vh - 80px);
-}
-
-.welcome-message {
-    text-align: center;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.welcome-message h2 {
-    color: #1e293b;
-    margin-bottom: 1rem;
-}
-
-.welcome-message p {
-    color: #64748b;
-    margin-bottom: 3rem;
-}
-
-.dashboard-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
-
-.stat-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    text-align: center;
-    border-left: 4px solid #1e88e5;
-}
-
-.stat-card h3 {
-    color: #64748b;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.stat-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-}
-
-.stat-label {
-    color: #94a3b8;
-    font-size: 0.8rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 70px;
-    }
+    <!-- JavaScript Files -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/navigation.js"></script>
     
-    .sidebar-header h2,
-    .nav-link span {
-        display: none;
-    }
-    
-    .main-content {
-        margin-left: 70px;
-        width: calc(100% - 70px);
-    }
-    
-    .dashboard-stats {
-        grid-template-columns: 1fr;
-    }
-}
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    }, function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
