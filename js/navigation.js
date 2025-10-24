@@ -156,7 +156,7 @@ function showPlaceholderContent(tabName) {
 
 // Load tab-specific JavaScript
 function loadTabScript(tabName) {
-  const scriptPath = `js/tabs/${tabName}.js`;
+  const scriptPath = `js/${tabName}.js`;
   
   // Remove existing tab script if any
   const existingScript = document.querySelector(`script[data-tab="${tabName}"]`);
