@@ -1,219 +1,388 @@
-// js/reports.js - COMPREHENSIVE REPORTING & ANALYTICS
-console.log('📊 Loading reports module...');
-
-const db = firebase.firestore();
-let chartInstances = {};
-
-// Data storage for reports
-let reportData = {
-    products: [],
+// Global variables
+let allData = {
+    transactions: [],
     stock: [],
     finance: [],
     marketing: [],
-    sales: [],
-    period: {}
+    debts: [],
+    customers: [],
+    products: []
 };
 
-// Initialize when page loads
+let charts = {};
+let currentFilters = {
+    startDate: null,
+    endDate: null,
+    productCategory: 'all',
+    customerFilter: 'all',
+    transactionType: 'all',
+    debtType: 'all'
+};
+
+// Initialize reports when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof firebase === 'undefined' || !firebase.apps.length) {
-        console.error('Firebase not available');
-        showErrorMessage('Firebase not loaded. Please refresh the page.');
-        return;
-    }
-    
-    console.log('Firebase available, initializing reports...');
-    // Initial report generation will be triggered by the HTML
+    initializeReports();
 });
 
-// Main report generation function
-async function generateReports() {
-    try {
-        showLoadingState();
-        console.log('Generating comprehensive reports...');
-        
-        // Get report parameters
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        const reportType = document.getElementById('reportType').value;
-        
-        reportData.period = { startDate, endDate, reportType };
-        
-        // Load all data in parallel
-        await Promise.all([
-            loadProductsData(),
-            loadStockData(),
-            loadFinancialData(),
-            loadMarketingData(),
-            loadSalesData()
-        ]);
-        
-        // Generate all reports
-        updateKPICards();
-        updateCharts();
-        updatePerformanceReports();
-        updatePerformanceIndicators();
-        
-        console.log('Reports generated successfully');
-        
-    } catch (error) {
-        console.error('Error generating reports:', error);
-        showTemporaryMessage('Error generating reports: ' + error.message, 'error');
+// Initialize all reports functionality
+function initializeReports() {
+    setupEventListeners();
+    loadFilterOptions();
+    fetchAllData();
+    updateLastUpdated();
+}
+
+// Set up event listeners for filters
+function setupEventListeners() {
+    document.getElementById('startDate').addEventListener('change', function(e) {
+        currentFilters.startDate = e.target.value;
+    });
+    
+    document.getElementById('endDate').addEventListener('change', function(e) {
+        currentFilters.endDate = e.target.value;
+    });
+    
+    document.getElementById('productCategory').addEventListener('change', function(e) {
+        currentFilters.productCategory = e.target.value;
+    });
+    
+    document.getElementById('customerFilter').addEventListener('change', function(e) {
+        currentFilters.customerFilter = e.target.value;
+    });
+    
+    document.getElementById('transactionType').addEventListener('change', function(e) {
+        currentFilters.transactionType = e.target.value;
+    });
+    
+    document.getElementById('debtType').addEventListener('change', function(e) {
+        currentFilters.debtType = e.target.value;
+    });
+}
+
+// Load filter dropdown options
+function loadFilterOptions() {
+    // Product categories will be loaded from products data
+    // Customers will be loaded from customers data
+}
+
+// Fetch all data from Firestore
+function fetchAllData() {
+    showLoading(true);
+    
+    Promise.all([
+        fetchTransactionsData(),
+        fetchStockData(),
+        fetchFinanceData(),
+        fetchMarketingData(),
+        fetchDebtsData(),
+        fetchCustomerData(),
+        fetchProductsData()
+    ]).then(() => {
+        calculateSummaryCards();
+        generateAllCharts();
+        displayTables();
+        showLoading(false);
+        updateLastUpdated();
+    }).catch(error => {
+        console.error('Error fetching data:', error);
+        showLoading(false);
+        alert('Error loading reports data. Please try again.');
+    });
+}
+
+// Fetch transactions data
+function fetchTransactionsData() {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions').onSnapshot(snapshot => {
+            allData.transactions = [];
+            snapshot.forEach(doc => {
+                allData.transactions.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            resolve();
+        }, reject);
+    });
+}
+
+// Fetch stock data
+function fetchStockData() {
+    return new Promise((resolve, reject) => {
+        db.collection('stock').onSnapshot(snapshot => {
+            allData.stock = [];
+            snapshot.forEach(doc => {
+                allData.stock.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            resolve();
+        }, reject);
+    });
+}
+
+// Fetch finance data
+function fetchFinanceData() {
+    return new Promise((resolve, reject) => {
+        db.collection('finance').onSnapshot(snapshot => {
+            allData.finance = [];
+            snapshot.forEach(doc => {
+                allData.finance.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            resolve();
+        }, reject);
+    });
+}
+
+// Fetch marketing data
+function fetchMarketingData() {
+    return new Promise((resolve, reject) => {
+        db.collection('marketing').onSnapshot(snapshot => {
+            allData.marketing = [];
+            snapshot.forEach(doc => {
+                allData.marketing.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            resolve();
+        }, reject);
+    });
+}
+
+// Fetch debts data
+function fetchDebtsData() {
+    return new Promise((resolve, reject) => {
+        db.collection('debts').onSnapshot(snapshot => {
+            allData.debts = [];
+            snapshot.forEach(doc => {
+                allData.debts.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            resolve();
+        }, reject);
+    });
+}
+
+// Fetch customer data
+function fetchCustomerData() {
+    return new Promise((resolve, reject) => {
+        db.collection('customers').onSnapshot(snapshot => {
+            allData.customers = [];
+            snapshot.forEach(doc => {
+                allData.customers.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            updateCustomerFilter();
+            resolve();
+        }, reject);
+    });
+}
+
+// Fetch products data
+function fetchProductsData() {
+    return new Promise((resolve, reject) => {
+        db.collection('products').onSnapshot(snapshot => {
+            allData.products = [];
+            snapshot.forEach(doc => {
+                allData.products.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            updateProductCategoryFilter();
+            resolve();
+        }, reject);
+    });
+}
+
+// Update customer filter dropdown
+function updateCustomerFilter() {
+    const customerFilter = document.getElementById('customerFilter');
+    customerFilter.innerHTML = '<option value="all">All</option>';
+    
+    allData.customers.forEach(customer => {
+        const option = document.createElement('option');
+        option.value = customer.id;
+        option.textContent = customer.name || customer.companyName || 'Unknown Customer';
+        customerFilter.appendChild(option);
+    });
+}
+
+// Update product category filter dropdown
+function updateProductCategoryFilter() {
+    const categoryFilter = document.getElementById('productCategory');
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+    
+    const categories = [...new Set(allData.products.map(product => product.category).filter(Boolean))];
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+}
+
+// Calculate and update summary cards
+function calculateSummaryCards() {
+    const filteredData = applyDataFilters();
+    
+    // Total Revenue (from sales)
+    const totalRevenue = filteredData.transactions
+        .filter(t => t.type === 'sale')
+        .reduce((sum, t) => sum + (parseFloat(t.totalAmount) || 0), 0);
+    
+    // Total Expenses (purchases + commissions + transport + marketing + debts ROI)
+    const purchaseExpenses = filteredData.transactions
+        .filter(t => t.type === 'purchase')
+        .reduce((sum, t) => sum + (parseFloat(t.totalAmount) || 0), 0);
+    
+    const commissionExpenses = filteredData.transactions
+        .reduce((sum, t) => sum + (parseFloat(t.cnfCommission) || 0), 0);
+    
+    const transportExpenses = filteredData.transactions
+        .reduce((sum, t) => sum + (parseFloat(t.transportExpense) || 0), 0);
+    
+    const marketingExpenses = filteredData.marketing
+        .reduce((sum, m) => sum + (parseFloat(m.paidAmount) || 0), 0);
+    
+    const debtExpenses = filteredData.debts
+        .reduce((sum, d) => sum + (parseFloat(d.monthlyROI) || 0) + (parseFloat(d.monthlyEMI) || 0), 0);
+    
+    const totalExpenses = purchaseExpenses + commissionExpenses + transportExpenses + marketingExpenses + debtExpenses;
+    
+    // Total Profit
+    const totalProfit = totalRevenue - totalExpenses;
+    
+    // Total Stock Value
+    const totalStockValue = filteredData.stock
+        .reduce((sum, item) => {
+            const product = allData.products.find(p => p.id === item.productId);
+            const unitPrice = product ? parseFloat(product.unitPrice) || 0 : 0;
+            return sum + (unitPrice * (parseInt(item.quantity) || 0));
+        }, 0);
+    
+    // Total Debts
+    const totalDebts = filteredData.debts
+        .reduce((sum, d) => sum + (parseFloat(d.remainingPrincipal) || 0), 0);
+    
+    // Total Expected Return
+    const totalExpectedReturn = filteredData.transactions
+        .reduce((sum, t) => sum + (parseFloat(t.expectedReturn) || 0), 0) +
+        filteredData.marketing
+        .reduce((sum, m) => sum + (parseFloat(m.expectedReturn) || 0), 0);
+    
+    // Update DOM elements
+    document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+    document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+    document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+    document.getElementById('totalStockValue').textContent = formatCurrency(totalStockValue);
+    document.getElementById('totalDebts').textContent = formatCurrency(totalDebts);
+    document.getElementById('totalExpectedReturn').textContent = formatCurrency(totalExpectedReturn);
+}
+
+// Apply filters to data
+function applyDataFilters() {
+    let filteredData = JSON.parse(JSON.stringify(allData));
+    
+    // Date filter
+    if (currentFilters.startDate || currentFilters.endDate) {
+        filteredData.transactions = filteredData.transactions.filter(t => {
+            const transactionDate = new Date(t.date || t.timestamp);
+            const startDate = currentFilters.startDate ? new Date(currentFilters.startDate) : new Date('1970-01-01');
+            const endDate = currentFilters.endDate ? new Date(currentFilters.endDate) : new Date();
+            
+            return transactionDate >= startDate && transactionDate <= endDate;
+        });
     }
-}
-
-// Load products data
-async function loadProductsData() {
-    try {
-        const snapshot = await db.collection('products').get();
-        reportData.products = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Loaded ${reportData.products.length} products`);
-    } catch (error) {
-        console.error('Error loading products:', error);
-    }
-}
-
-// Load stock data
-async function loadStockData() {
-    try {
-        const snapshot = await db.collection('stock')
-            .where('date', '>=', reportData.period.startDate)
-            .where('date', '<=', reportData.period.endDate)
-            .get();
+    
+    // Product category filter
+    if (currentFilters.productCategory !== 'all') {
+        const productIdsInCategory = allData.products
+            .filter(p => p.category === currentFilters.productCategory)
+            .map(p => p.id);
         
-        reportData.stock = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Loaded ${reportData.stock.length} stock entries`);
-    } catch (error) {
-        console.error('Error loading stock data:', error);
-    }
-}
-
-// Load financial data
-async function loadFinancialData() {
-    try {
-        const snapshot = await db.collection('finance')
-            .where('date', '>=', reportData.period.startDate)
-            .where('date', '<=', reportData.period.endDate)
-            .get();
-        
-        reportData.finance = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Loaded ${reportData.finance.length} financial entries`);
-    } catch (error) {
-        console.error('Error loading financial data:', error);
-    }
-}
-
-// Load marketing data
-async function loadMarketingData() {
-    try {
-        const snapshot = await db.collection('doctorAgreements').get();
-        reportData.marketing = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Loaded ${reportData.marketing.length} marketing agreements`);
-    } catch (error) {
-        console.error('Error loading marketing data:', error);
-    }
-}
-
-// Load sales data (from stock - scheme sales)
-async function loadSalesData() {
-    try {
-        const snapshot = await db.collection('stock')
-            .where('type', '==', 'scheme_sale')
-            .where('date', '>=', reportData.period.startDate)
-            .where('date', '<=', reportData.period.endDate)
-            .get();
-        
-        reportData.sales = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Loaded ${reportData.sales.length} sales entries`);
-    } catch (error) {
-        console.error('Error loading sales data:', error);
-    }
-}
-
-// Update KPI Cards
-function updateKPICards() {
-    // Calculate totals
-    const totalRevenue = reportData.finance
-        .filter(entry => entry.type === 'Revenue')
-        .reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    
-    const totalExpenses = reportData.finance
-        .filter(entry => entry.type === 'Expense')
-        .reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    
-    const netProfit = totalRevenue - totalExpenses;
-    
-    // Calculate stock value (simplified - using supplier price)
-    const stockValue = reportData.products.reduce((sum, product) => {
-        return sum + ((product.supplierPrice || 0) * (product.stock || 0));
-    }, 0);
-    
-    // Update KPI cards
-    document.getElementById('kpiRevenue').textContent = totalRevenue.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    document.getElementById('kpiExpenses').textContent = totalExpenses.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    document.getElementById('kpiProfit').textContent = netProfit.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    document.getElementById('kpiStock').textContent = stockValue.toLocaleString('en-IN', {minimumFractionDigits: 2});
-    
-    // Simple trend calculation (in real app, compare with previous period)
-    document.getElementById('revenueTrend').textContent = '+12.5% vs previous period';
-    document.getElementById('expensesTrend').textContent = '+8.2% vs previous period';
-    document.getElementById('profitTrend').textContent = '+15.3% vs previous period';
-    document.getElementById('stockTrend').textContent = '+5.7% vs previous period';
-}
-
-// Update Charts
-function updateCharts() {
-    updateRevenueExpenseChart();
-    updateSalesByCategoryChart();
-    updateStockMovementChart();
-    updateMarketingROIChart();
-}
-
-function updateRevenueExpenseChart() {
-    const ctx = document.getElementById('revenueExpenseChart')?.getContext('2d');
-    if (!ctx) return;
-    
-    // Destroy existing chart
-    if (chartInstances.revenueExpenseChart) {
-        chartInstances.revenueExpenseChart.destroy();
+        filteredData.transactions = filteredData.transactions.filter(t => 
+            productIdsInCategory.includes(t.productId)
+        );
+        filteredData.stock = filteredData.stock.filter(s => 
+            productIdsInCategory.includes(s.productId)
+        );
     }
     
-    // Group by month for trend analysis
-    const monthlyData = groupDataByMonth();
+    // Customer filter
+    if (currentFilters.customerFilter !== 'all') {
+        filteredData.transactions = filteredData.transactions.filter(t => 
+            t.customerId === currentFilters.customerFilter || t.sellerId === currentFilters.customerFilter
+        );
+    }
     
-    chartInstances.revenueExpenseChart = new Chart(ctx, {
+    // Transaction type filter
+    if (currentFilters.transactionType !== 'all') {
+        filteredData.transactions = filteredData.transactions.filter(t => 
+            t.type === currentFilters.transactionType
+        );
+    }
+    
+    // Debt type filter
+    if (currentFilters.debtType !== 'all') {
+        filteredData.debts = filteredData.debts.filter(d => 
+            d.type === currentFilters.debtType
+        );
+    }
+    
+    return filteredData;
+}
+
+// Generate all charts
+function generateAllCharts() {
+    generateRevenueExpenseChart();
+    generateTopProductsChart();
+    generateTopCustomersChart();
+    generateDebtOverviewChart();
+    generateMarketingROIChart();
+    generateStockLevelsChart();
+}
+
+// Revenue vs Expenses Chart
+function generateRevenueExpenseChart() {
+    const ctx = document.getElementById('revenueExpenseChart').getContext('2d');
+    
+    // Sample data - in real implementation, aggregate by month
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const revenueData = [120000, 150000, 180000, 140000, 160000, 200000];
+    const expenseData = [80000, 90000, 110000, 95000, 105000, 120000];
+    
+    if (charts.revenueExpense) {
+        charts.revenueExpense.destroy();
+    }
+    
+    charts.revenueExpense = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: monthlyData.labels,
+            labels: months,
             datasets: [
                 {
                     label: 'Revenue',
-                    data: monthlyData.revenue,
-                    borderColor: '#4CAF50',
-                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    data: revenueData,
+                    borderColor: '#10B981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     tension: 0.4,
                     fill: true
                 },
                 {
                     label: 'Expenses',
-                    data: monthlyData.expenses,
-                    borderColor: '#f44336',
-                    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                    data: expenseData,
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
                     tension: 0.4,
                     fill: true
                 }
@@ -222,12 +391,26 @@ function updateRevenueExpenseChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '₹' + value.toLocaleString('en-IN');
+                            return '₹' + (value / 1000) + 'k';
                         }
                     }
                 }
@@ -236,34 +419,204 @@ function updateRevenueExpenseChart() {
     });
 }
 
-function updateSalesByCategoryChart() {
-    const ctx = document.getElementById('salesByCategoryChart')?.getContext('2d');
-    if (!ctx) return;
+// Top Products Chart
+function generateTopProductsChart() {
+    const ctx = document.getElementById('topProductsChart').getContext('2d');
     
-    if (chartInstances.salesByCategoryChart) {
-        chartInstances.salesByCategoryChart.destroy();
+    // Aggregate product sales
+    const productSales = {};
+    allData.transactions
+        .filter(t => t.type === 'sale')
+        .forEach(t => {
+            const productId = t.productId;
+            const amount = parseFloat(t.totalAmount) || 0;
+            productSales[productId] = (productSales[productId] || 0) + amount;
+        });
+    
+    // Get top 5 products
+    const topProducts = Object.entries(productSales)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([productId, sales]) => {
+            const product = allData.products.find(p => p.id === productId);
+            return {
+                name: product ? product.name : 'Unknown Product',
+                sales: sales
+            };
+        });
+    
+    if (charts.topProducts) {
+        charts.topProducts.destroy();
     }
     
-    // Group sales by product category
-    const salesByCategory = {};
-    reportData.sales.forEach(sale => {
-        const product = reportData.products.find(p => p.id === sale.productId);
-        if (product) {
-            const category = product.category || 'Uncategorized';
-            salesByCategory[category] = (salesByCategory[category] || 0) + (sale.totalValue || 0);
+    charts.topProducts = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topProducts.map(p => p.name),
+            datasets: [{
+                label: 'Sales (₹)',
+                data: topProducts.map(p => p.sales),
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(14, 165, 233, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(59, 130, 246)',
+                    'rgb(16, 185, 129)',
+                    'rgb(245, 158, 11)',
+                    'rgb(139, 92, 246)',
+                    'rgb(14, 165, 233)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Sales: ${formatCurrency(context.parsed.y)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + (value / 1000) + 'k';
+                        }
+                    }
+                }
+            }
         }
     });
+}
+
+// Top Customers Chart
+function generateTopCustomersChart() {
+    const ctx = document.getElementById('topCustomersChart').getContext('2d');
     
-    chartInstances.salesByCategoryChart = new Chart(ctx, {
+    // Aggregate customer purchases
+    const customerPurchases = {};
+    allData.transactions
+        .filter(t => t.type === 'sale')
+        .forEach(t => {
+            const customerId = t.customerId;
+            const amount = parseFloat(t.totalAmount) || 0;
+            customerPurchases[customerId] = (customerPurchases[customerId] || 0) + amount;
+        });
+    
+    // Get top 5 customers
+    const topCustomers = Object.entries(customerPurchases)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([customerId, purchases]) => {
+            const customer = allData.customers.find(c => c.id === customerId);
+            return {
+                name: customer ? (customer.name || customer.companyName) : 'Unknown Customer',
+                purchases: purchases
+            };
+        });
+    
+    if (charts.topCustomers) {
+        charts.topCustomers.destroy();
+    }
+    
+    charts.topCustomers = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topCustomers.map(c => c.name),
+            datasets: [{
+                label: 'Purchases (₹)',
+                data: topCustomers.map(c => c.purchases),
+                backgroundColor: [
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(20, 184, 166, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(139, 92, 246)',
+                    'rgb(20, 184, 166)',
+                    'rgb(245, 158, 11)',
+                    'rgb(59, 130, 246)',
+                    'rgb(16, 185, 129)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Purchases: ${formatCurrency(context.parsed.x)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + (value / 1000) + 'k';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Debt Overview Chart
+function generateDebtOverviewChart() {
+    const ctx = document.getElementById('debtOverviewChart').getContext('2d');
+    
+    const bankDebts = allData.debts
+        .filter(d => d.type === 'bank')
+        .reduce((sum, d) => sum + (parseFloat(d.remainingPrincipal) || 0), 0);
+    
+    const investorDebts = allData.debts
+        .filter(d => d.type === 'investor')
+        .reduce((sum, d) => sum + (parseFloat(d.remainingPrincipal) || 0), 0);
+    
+    if (charts.debtOverview) {
+        charts.debtOverview.destroy();
+    }
+    
+    charts.debtOverview = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.keys(salesByCategory),
+            labels: ['Bank Debts', 'Investor Debts'],
             datasets: [{
-                data: Object.values(salesByCategory),
+                data: [bankDebts, investorDebts],
                 backgroundColor: [
-                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
-                    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
-                ]
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(139, 92, 246, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(59, 130, 246)',
+                    'rgb(139, 92, 246)'
+                ],
+                borderWidth: 2
             }]
         },
         options: {
@@ -272,44 +625,14 @@ function updateSalesByCategoryChart() {
             plugins: {
                 legend: {
                     position: 'bottom'
-                }
-            }
-        }
-    });
-}
-
-function updateStockMovementChart() {
-    const ctx = document.getElementById('stockMovementChart')?.getContext('2d');
-    if (!ctx) return;
-    
-    if (chartInstances.stockMovementChart) {
-        chartInstances.stockMovementChart.destroy();
-    }
-    
-    // Get top 10 products by stock value
-    const topProducts = [...reportData.products]
-        .sort((a, b) => (b.supplierPrice * b.stock) - (a.supplierPrice * a.stock))
-        .slice(0, 10);
-    
-    chartInstances.stockMovementChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: topProducts.map(p => p.name),
-            datasets: [{
-                label: 'Stock Value (₹)',
-                data: topProducts.map(p => (p.supplierPrice || 0) * (p.stock || 0)),
-                backgroundColor: '#2196F3'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return '₹' + value.toLocaleString('en-IN');
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
                         }
                     }
                 }
@@ -318,46 +641,57 @@ function updateStockMovementChart() {
     });
 }
 
-function updateMarketingROIChart() {
-    const ctx = document.getElementById('marketingROIChart')?.getContext('2d');
-    if (!ctx) return;
+// Marketing ROI Chart
+function generateMarketingROIChart() {
+    const ctx = document.getElementById('marketingROIChart').getContext('2d');
     
-    if (chartInstances.marketingROIChart) {
-        chartInstances.marketingROIChart.destroy();
+    // Sample data - in real implementation, use actual marketing data
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const paidAmounts = [50000, 60000, 45000, 70000, 55000, 65000];
+    const expectedReturns = [75000, 90000, 60000, 105000, 80000, 95000];
+    
+    if (charts.marketingROI) {
+        charts.marketingROI.destroy();
     }
     
-    // Calculate ROI for each doctor agreement
-    const marketingROI = reportData.marketing.map(agreement => {
-        const roi = agreement.agreementAmount > 0 ? 
-            ((agreement.completedValue || 0) / agreement.agreementAmount) * 100 : 0;
-        return {
-            doctor: agreement.doctorName,
-            roi: roi,
-            amount: agreement.agreementAmount
-        };
-    }).filter(item => item.amount > 0)
-      .sort((a, b) => b.roi - a.roi)
-      .slice(0, 8);
-    
-    chartInstances.marketingROIChart = new Chart(ctx, {
+    charts.marketingROI = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: marketingROI.map(item => item.doctor),
-            datasets: [{
-                label: 'ROI %',
-                data: marketingROI.map(item => item.roi),
-                backgroundColor: '#FF9800'
-            }]
+            labels: months,
+            datasets: [
+                {
+                    label: 'Paid Amount',
+                    data: paidAmounts,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)'
+                },
+                {
+                    label: 'Expected Returns',
+                    data: expectedReturns,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)'
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return value + '%';
+                            return '₹' + (value / 1000) + 'k';
                         }
                     }
                 }
@@ -366,368 +700,250 @@ function updateMarketingROIChart() {
     });
 }
 
-// Update Performance Reports
-function updatePerformanceReports() {
-    updateTopProductsList();
-    updateStockAlertsList();
-    updateMarketingPerformanceList();
-    updateExpenseBreakdownList();
-}
-
-function updateTopProductsList() {
-    const container = document.getElementById('topProductsList');
-    if (!container) return;
+// Stock Levels Chart
+function generateStockLevelsChart() {
+    const ctx = document.getElementById('stockLevelsChart').getContext('2d');
     
-    // Calculate product performance
-    const productPerformance = reportData.products.map(product => {
-        const sales = reportData.sales.filter(sale => sale.productId === product.id);
-        const totalSales = sales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
-        const profitMargin = product.supplierPrice > 0 ? 
-            ((product.stockistPrice - product.supplierPrice) / product.supplierPrice) * 100 : 0;
-        
-        return {
-            name: product.name,
-            sales: totalSales,
-            stock: product.stock || 0,
-            margin: profitMargin
-        };
-    }).filter(item => item.sales > 0)
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 10);
-    
-    container.innerHTML = '';
-    
-    productPerformance.forEach((product, index) => {
-        const item = document.createElement('div');
-        item.className = 'report-item';
-        item.innerHTML = `
-            <div class="name">${index + 1}. ${product.name}</div>
-            <div class="value">₹${product.sales.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
-            <div class="trend" style="color: #4CAF50;">${product.margin.toFixed(1)}% margin</div>
-        `;
-        container.appendChild(item);
-    });
-}
-
-function updateStockAlertsList() {
-    const container = document.getElementById('stockAlertsList');
-    if (!container) return;
-    
-    const lowStockProducts = reportData.products
-        .filter(product => (product.stock || 0) < 10) // Low stock threshold
-        .sort((a, b) => (a.stock || 0) - (b.stock || 0))
-        .slice(0, 10);
-    
-    container.innerHTML = '';
-    
-    if (lowStockProducts.length === 0) {
-        container.innerHTML = '<div class="report-item">✅ All stock levels are healthy</div>';
-        return;
-    }
-    
-    lowStockProducts.forEach(product => {
-        const item = document.createElement('div');
-        item.className = 'report-item';
-        const alertLevel = product.stock < 5 ? '🔴' : '🟡';
-        item.innerHTML = `
-            <div class="name">${alertLevel} ${product.name}</div>
-            <div class="value">${product.stock} units</div>
-            <div class="trend" style="color: #f44336;">Low stock</div>
-        `;
-        container.appendChild(item);
-    });
-}
-
-function updateMarketingPerformanceList() {
-    const container = document.getElementById('marketingPerformanceList');
-    if (!container) return;
-    
-    const marketingPerformance = reportData.marketing
-        .map(agreement => {
-            const roi = agreement.agreementAmount > 0 ? 
-                ((agreement.completedValue || 0) / agreement.agreementAmount) * 100 : 0;
+    // Get stock levels for top 10 products
+    const productStock = allData.stock
+        .map(item => {
+            const product = allData.products.find(p => p.id === item.productId);
             return {
-                doctor: agreement.doctorName,
-                target: agreement.agreementAmount || 0,
-                completed: agreement.completedValue || 0,
-                roi: roi
+                name: product ? product.name : 'Unknown Product',
+                quantity: parseInt(item.quantity) || 0,
+                minThreshold: parseInt(item.minThreshold) || 10
             };
         })
-        .filter(item => item.target > 0)
-        .sort((a, b) => b.roi - a.roi)
-        .slice(0, 8);
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
     
-    container.innerHTML = '';
-    
-    marketingPerformance.forEach(agreement => {
-        const item = document.createElement('div');
-        item.className = 'report-item';
-        const performance = agreement.roi >= 100 ? '🟢' : agreement.roi >= 50 ? '🟡' : '🔴';
-        item.innerHTML = `
-            <div class="name">${performance} Dr. ${agreement.doctor}</div>
-            <div class="value">${agreement.roi.toFixed(1)}%</div>
-            <div class="trend">₹${agreement.completed.toLocaleString('en-IN')}</div>
-        `;
-        container.appendChild(item);
-    });
-}
-
-function updateExpenseBreakdownList() {
-    const container = document.getElementById('expenseBreakdownList');
-    if (!container) return;
-    
-    const expenseByCategory = {};
-    reportData.finance
-        .filter(entry => entry.type === 'Expense')
-        .forEach(entry => {
-            expenseByCategory[entry.category] = (expenseByCategory[entry.category] || 0) + (entry.amount || 0);
-        });
-    
-    const sortedExpenses = Object.entries(expenseByCategory)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 8);
-    
-    container.innerHTML = '';
-    
-    sortedExpenses.forEach(([category, amount]) => {
-        const item = document.createElement('div');
-        item.className = 'report-item';
-        item.innerHTML = `
-            <div class="name">${category}</div>
-            <div class="value">₹${amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
-        `;
-        container.appendChild(item);
-    });
-}
-
-// Update Performance Indicators
-function updatePerformanceIndicators() {
-    updateInventoryTurnover();
-    updateDoctorROI();
-    updateProfitMargin();
-    updateSchemeEffectiveness();
-}
-
-function updateInventoryTurnover() {
-    // Simplified inventory turnover calculation
-    const costOfGoodsSold = reportData.sales.reduce((sum, sale) => {
-        const product = reportData.products.find(p => p.id === sale.productId);
-        return sum + ((product?.supplierPrice || 0) * (sale.billedQuantity || 0));
-    }, 0);
-    
-    const averageInventory = reportData.products.reduce((sum, product) => {
-        return sum + ((product.supplierPrice || 0) * (product.stock || 0));
-    }, 0) / 2; // Simplified average
-    
-    const turnoverRatio = averageInventory > 0 ? costOfGoodsSold / averageInventory : 0;
-    
-    document.getElementById('turnoverRatio').textContent = turnoverRatio.toFixed(2);
-    document.getElementById('turnoverBar').style.width = Math.min(turnoverRatio * 10, 100) + '%';
-    
-    let status = 'Needs improvement';
-    let fillClass = 'fill-poor';
-    if (turnoverRatio > 2) {
-        status = 'Excellent';
-        fillClass = 'fill-good';
-    } else if (turnoverRatio > 1) {
-        status = 'Good';
-        fillClass = 'fill-average';
+    if (charts.stockLevels) {
+        charts.stockLevels.destroy();
     }
     
-    document.getElementById('turnoverBar').className = `indicator-fill ${fillClass}`;
-    document.getElementById('turnoverStatus').textContent = status;
-}
-
-function updateDoctorROI() {
-    const totalMarketingSpend = reportData.marketing.reduce((sum, agreement) => 
-        sum + (agreement.agreementAmount || 0), 0);
-    const totalMarketingReturns = reportData.marketing.reduce((sum, agreement) => 
-        sum + (agreement.completedValue || 0), 0);
-    
-    const doctorROI = totalMarketingSpend > 0 ? 
-        (totalMarketingReturns / totalMarketingSpend) * 100 : 0;
-    
-    document.getElementById('doctorROI').textContent = doctorROI.toFixed(1) + '%';
-    document.getElementById('doctorROIBar').style.width = Math.min(doctorROI, 100) + '%';
-    
-    let status = 'Needs improvement';
-    let fillClass = 'fill-poor';
-    if (doctorROI > 150) {
-        status = 'Excellent';
-        fillClass = 'fill-good';
-    } else if (doctorROI > 100) {
-        status = 'Good';
-        fillClass = 'fill-average';
-    }
-    
-    document.getElementById('doctorROIBar').className = `indicator-fill ${fillClass}`;
-    document.getElementById('doctorROIStatus').textContent = status;
-}
-
-function updateProfitMargin() {
-    const totalRevenue = reportData.finance
-        .filter(entry => entry.type === 'Revenue')
-        .reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    
-    const totalExpenses = reportData.finance
-        .filter(entry => entry.type === 'Expense')
-        .reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    
-    const profitMargin = totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0;
-    
-    document.getElementById('profitMargin').textContent = profitMargin.toFixed(1) + '%';
-    document.getElementById('profitMarginBar').style.width = Math.min(profitMargin, 100) + '%';
-    
-    let status = 'Low';
-    let fillClass = 'fill-poor';
-    if (profitMargin > 20) {
-        status = 'Excellent';
-        fillClass = 'fill-good';
-    } else if (profitMargin > 10) {
-        status = 'Good';
-        fillClass = 'fill-average';
-    }
-    
-    document.getElementById('profitMarginBar').className = `indicator-fill ${fillClass}`;
-    document.getElementById('profitMarginStatus').textContent = status;
-}
-
-function updateSchemeEffectiveness() {
-    const totalSchemeSales = reportData.sales.reduce((sum, sale) => sum + (sale.billedQuantity || 0), 0);
-    const totalFreeGiven = reportData.sales.reduce((sum, sale) => sum + (sale.freeQuantity || 0), 0);
-    
-    const schemeEffectiveness = totalSchemeSales > 0 ? 
-        (totalFreeGiven / totalSchemeSales) * 100 : 0;
-    
-    document.getElementById('schemeEffectiveness').textContent = schemeEffectiveness.toFixed(1) + '%';
-    document.getElementById('schemeEffectivenessBar').style.width = Math.min(schemeEffectiveness, 100) + '%';
-    
-    let status = 'Low engagement';
-    let fillClass = 'fill-poor';
-    if (schemeEffectiveness > 15) {
-        status = 'High engagement';
-        fillClass = 'fill-good';
-    } else if (schemeEffectiveness > 8) {
-        status = 'Moderate engagement';
-        fillClass = 'fill-average';
-    }
-    
-    document.getElementById('schemeEffectivenessBar').className = `indicator-fill ${fillClass}`;
-    document.getElementById('schemeEffectivenessStatus').textContent = status;
-}
-
-// Utility Functions
-function groupDataByMonth() {
-    // Simplified monthly grouping - in real app, use actual date ranges
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const revenue = [45000, 52000, 48000, 61000, 58000, 72000];
-    const expenses = [38000, 42000, 39000, 48000, 45000, 52000];
-    
-    return {
-        labels: months,
-        revenue: revenue,
-        expenses: expenses
-    };
-}
-
-// Export to Excel
-function exportToExcel() {
-    try {
-        // Create workbook
-        const wb = XLSX.utils.book_new();
-        
-        // Add summary sheet
-        const summaryData = [
-            ['Sanj Healthcare - Financial Summary'],
-            ['Report Period', `${reportData.period.startDate} to ${reportData.period.endDate}`],
-            [''],
-            ['KPI', 'Value'],
-            ['Total Revenue', `₹${document.getElementById('kpiRevenue').textContent}`],
-            ['Total Expenses', `₹${document.getElementById('kpiExpenses').textContent}`],
-            ['Net Profit', `₹${document.getElementById('kpiProfit').textContent}`],
-            ['Stock Value', `₹${document.getElementById('kpiStock').textContent}`]
-        ];
-        
-        const ws = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, ws, 'Summary');
-        
-        // Generate and download
-        const fileName = `Sanj_Healthcare_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        
-        showTemporaryMessage('Report exported to Excel successfully!', 'success');
-        
-    } catch (error) {
-        console.error('Error exporting to Excel:', error);
-        showTemporaryMessage('Error exporting to Excel: ' + error.message, 'error');
-    }
-}
-
-// Print Reports
-function printReports() {
-    window.print();
-}
-
-// UI Utility Functions
-function showLoadingState() {
-    // Show loading states in various containers
-    const containers = [
-        'topProductsList', 'stockAlertsList', 'marketingPerformanceList', 'expenseBreakdownList'
-    ];
-    
-    containers.forEach(containerId => {
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.innerHTML = '<div class="loading">Generating report...</div>';
+    charts.stockLevels = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: productStock.map(p => p.name),
+            datasets: [{
+                label: 'Current Stock',
+                data: productStock.map(p => p.quantity),
+                backgroundColor: productStock.map(p => 
+                    p.quantity <= p.minThreshold ? 'rgba(239, 68, 68, 0.7)' : 'rgba(59, 130, 246, 0.7)'
+                ),
+                borderColor: productStock.map(p => 
+                    p.quantity <= p.minThreshold ? 'rgb(239, 68, 68)' : 'rgb(59, 130, 246)'
+                ),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Quantity'
+                    }
+                }
+            }
         }
     });
 }
 
-function showTemporaryMessage(message, type = 'info') {
-    const messageDiv = document.createElement('div');
-    messageDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 5px;
-        color: white;
-        z-index: 1000;
-        font-weight: bold;
-        transition: opacity 0.3s;
-    `;
+// Display low stock table
+function displayLowStockTable() {
+    const lowStockTable = document.getElementById('lowStockTable');
+    lowStockTable.innerHTML = '';
     
-    messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : 
-                                      type === 'error' ? '#dc3545' : '#17a2b8';
-    messageDiv.textContent = message;
+    const lowStockItems = allData.stock.filter(item => {
+        const quantity = parseInt(item.quantity) || 0;
+        const minThreshold = parseInt(item.minThreshold) || 10;
+        return quantity <= minThreshold;
+    });
     
-    document.body.appendChild(messageDiv);
+    document.getElementById('lowStockCount').textContent = `${lowStockItems.length} items`;
     
-    setTimeout(() => {
-        messageDiv.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(messageDiv), 300);
-    }, 3000);
+    lowStockItems.forEach(item => {
+        const product = allData.products.find(p => p.id === item.productId);
+        const quantity = parseInt(item.quantity) || 0;
+        const minThreshold = parseInt(item.minThreshold) || 10;
+        
+        const row = document.createElement('tr');
+        row.className = 'bg-white border-b hover:bg-gray-50';
+        row.innerHTML = `
+            <td class="px-4 py-3 font-medium text-gray-900">${product ? product.name : 'Unknown Product'}</td>
+            <td class="px-4 py-3">${product ? product.category : 'N/A'}</td>
+            <td class="px-4 py-3 font-medium ${quantity === 0 ? 'text-red-600' : 'text-orange-600'}">${quantity}</td>
+            <td class="px-4 py-3">${minThreshold}</td>
+            <td class="px-4 py-3">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                    quantity === 0 ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
+                }">
+                    ${quantity === 0 ? 'Out of Stock' : 'Low Stock'}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-gray-500">${formatDate(item.lastUpdated)}</td>
+        `;
+        lowStockTable.appendChild(row);
+    });
 }
 
-function showErrorMessage(message) {
-    const container = document.createElement('div');
-    container.className = 'error-message';
-    container.innerHTML = `
-        <h3>Error Loading Reports</h3>
-        <p>${message}</p>
-        <button class="btn generate-btn" onclick="generateReports()" style="margin-top: 10px;">Try Again</button>
-    `;
+// Display transactions table
+function displayTransactionsTable() {
+    const transactionsTable = document.getElementById('transactionsTable');
+    transactionsTable.innerHTML = '';
     
-    // Add to page
-    const existingError = document.querySelector('.error-message');
-    if (existingError) existingError.remove();
+    const filteredTransactions = applyDataFilters().transactions.slice(0, 50); // Show last 50
     
-    document.querySelector('.control-panel').after(container);
+    filteredTransactions.forEach(transaction => {
+        const product = allData.products.find(p => p.id === transaction.productId);
+        const customer = allData.customers.find(c => c.id === (transaction.customerId || transaction.sellerId));
+        
+        const row = document.createElement('tr');
+        row.className = 'bg-white border-b hover:bg-gray-50';
+        row.innerHTML = `
+            <td class="px-4 py-3">${formatDate(transaction.date)}</td>
+            <td class="px-4 py-3 font-medium text-gray-900">${customer ? (customer.name || customer.companyName) : 'Unknown'}</td>
+            <td class="px-4 py-3">${product ? product.name : 'Unknown Product'}</td>
+            <td class="px-4 py-3">${transaction.quantity || 0}</td>
+            <td class="px-4 py-3 font-medium">${formatCurrency(transaction.totalAmount)}</td>
+            <td class="px-4 py-3">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                    transaction.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }">
+                    ${transaction.paymentStatus || 'pending'}
+                </span>
+            </td>
+            <td class="px-4 py-3">${formatCurrency(transaction.expectedReturn)}</td>
+            <td class="px-4 py-3">${formatCurrency(transaction.cnfCommission)}</td>
+            <td class="px-4 py-3">${formatCurrency(transaction.transportExpense)}</td>
+        `;
+        transactionsTable.appendChild(row);
+    });
 }
 
-// Make functions globally available
-window.generateReports = generateReports;
-window.exportToExcel = exportToExcel;
-window.printReports = printReports;
+// Display debts table
+function displayDebtsTable() {
+    const debtsTable = document.getElementById('debtsTable');
+    debtsTable.innerHTML = '';
+    
+    const filteredDebts = applyDataFilters().debts;
+    
+    filteredDebts.forEach(debt => {
+        const row = document.createElement('tr');
+        row.className = 'bg-white border-b hover:bg-gray-50';
+        row.innerHTML = `
+            <td class="px-4 py-3 font-medium text-gray-900">${debt.bankName || debt.investorName || 'Unknown'}</td>
+            <td class="px-4 py-3">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                    debt.type === 'bank' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                }">
+                    ${debt.type || 'unknown'}
+                </span>
+            </td>
+            <td class="px-4 py-3 font-medium">${formatCurrency(debt.remainingPrincipal)}</td>
+            <td class="px-4 py-3">${formatCurrency(debt.monthlyROI || debt.monthlyEMI)}</td>
+            <td class="px-4 py-3">${debt.skippedROI || 0}</td>
+            <td class="px-4 py-3">${formatCurrency(debt.partialWithdrawals)}</td>
+            <td class="px-4 py-3">${formatDate(debt.startDate)}</td>
+            <td class="px-4 py-3">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                    debt.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }">
+                    ${debt.status || 'active'}
+                </span>
+            </td>
+        `;
+        debtsTable.appendChild(row);
+    });
+}
 
-console.log('📊 Reports module loaded successfully!');
+// Display all tables
+function displayTables() {
+    displayLowStockTable();
+    displayTransactionsTable();
+    displayDebtsTable();
+}
+
+// Apply filters and refresh data
+function applyFilters() {
+    calculateSummaryCards();
+    generateAllCharts();
+    displayTables();
+}
+
+// Reset all filters
+function resetFilters() {
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    document.getElementById('productCategory').value = 'all';
+    document.getElementById('customerFilter').value = 'all';
+    document.getElementById('transactionType').value = 'all';
+    document.getElementById('debtType').value = 'all';
+    
+    currentFilters = {
+        startDate: null,
+        endDate: null,
+        productCategory: 'all',
+        customerFilter: 'all',
+        transactionType: 'all',
+        debtType: 'all'
+    };
+    
+    applyFilters();
+}
+
+// Show/hide loading spinner
+function showLoading(show) {
+    const spinner = document.getElementById('loadingSpinner');
+    spinner.style.display = show ? 'flex' : 'none';
+}
+
+// Update last updated timestamp
+function updateLastUpdated() {
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = `Last updated: ${now.toLocaleString()}`;
+}
+
+// Format currency
+function formatCurrency(amount) {
+    const num = parseFloat(amount) || 0;
+    return '₹' + num.toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// Format date
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+// Export to PDF (placeholder function)
+function exportToPDF() {
+    alert('PDF export functionality would be implemented here. This could use libraries like jsPDF or generate a server-side PDF.');
+    // In a real implementation, this would:
+    // 1. Capture the current report state
+    // 2. Generate a PDF with all charts and tables
+    // 3. Download the PDF file
+}
+
+// Auto-refresh data every 5 minutes
+setInterval(() => {
+    fetchAllData();
+}, 5 * 60 * 1000);

@@ -1,323 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sanj Healthcare - Doctor Agreements</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../css/design-system.css">
-<link rel="stylesheet" href="../css/components.css">
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-
-<style>
-  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
-  h1 { text-align: center; margin-top: 20px; color: #333; }
-  
-  /* Summary Cards */
-  .summary-cards { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-    gap: 20px; 
-    margin: 20px auto; 
-    max-width: 1200px;
-  }
-  .summary-card { 
-    background: #fff; 
-    padding: 20px; 
-    border-radius: 10px; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-    text-align: center;
-  }
-  .summary-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; }
-  .summary-card .value { font-size: 24px; font-weight: bold; color: #2196F3; }
-  
-  /* Action Buttons */
-  .action-buttons { 
-    max-width: 1200px; 
-    margin: 20px auto; 
-    display: flex; 
-    gap: 10px; 
-  }
-  .btn { 
-    padding: 10px 20px; 
-    border: none; 
-    border-radius: 5px; 
-    cursor: pointer; 
-    font-size: 14px; 
-  }
-  .add-btn { background: #4CAF50; color: white; }
-  .filter-btn { background: #2196F3; color: white; }
-  .cancel-btn { background: #6c757d; color: white; }
-  
-  /* Agreement Form */
-  #agreementForm { 
-    display: none; 
-    max-width: 600px; 
-    margin: 20px auto; 
-    background: #fff; 
-    padding: 25px; 
-    border-radius: 10px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
-  }
-  .form-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 15px; 
-  }
-  .form-group { margin-bottom: 15px; }
-  .form-group.full-width { grid-column: 1 / -1; }
-  .form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
-  .form-group input, .form-group select, .form-group textarea { 
-    width: 100%; 
-    padding: 10px; 
-    border: 1px solid #ddd; 
-    border-radius: 5px; 
-    font-size: 14px; 
-  }
-  .form-group textarea { height: 80px; resize: vertical; }
-  .form-buttons { 
-    display: flex; 
-    gap: 10px; 
-    margin-top: 20px; 
-    grid-column: 1 / -1; 
-  }
-  
-  /* Agreements Table */
-  .container { max-width: 1200px; margin: 20px auto; }
-  table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    background: #fff; 
-    border-radius: 10px; 
-    overflow: hidden; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-  }
-  th, td { 
-    padding: 12px; 
-    border-bottom: 1px solid #eee; 
-    text-align: left; 
-  }
-  th { 
-    background: #2196F3; 
-    color: white; 
-    font-weight: 600; 
-    cursor: pointer;
-  }
-  th:hover { background: #1976D2; }
-  
-  /* Color Coding */
-  tr.performing-well { background: #d4edda; } /* Green - Return ≥ Paid */
-  tr.underperforming { background: #f8d7da; } /* Red - Return < Paid */
-  tr.needs-review { background: #fff3cd; } /* Yellow - Expired/Review */
-  tr.completed { background: #e2e3e5; } /* Gray - Completed */
-  
-  /* Status Badges */
-  .status-badge { 
-    padding: 4px 8px; 
-    border-radius: 12px; 
-    font-size: 12px; 
-    font-weight: 500; 
-  }
-  .status-active { background: #d4edda; color: #155724; }
-  .status-completed { background: #e2e3e5; color: #383d41; }
-  .status-discontinued { background: #f8d7da; color: #721c24; }
-  
-  /* Action Buttons in Table */
-  .action-cell { white-space: nowrap; }
-  .edit-btn { background: #2196F3; color: white; }
-  .delete-btn { background: #f44336; color: white; }
-  
-  /* Filter Section */
-  #filterSection { 
-    display: none; 
-    max-width: 1200px; 
-    margin: 20px auto; 
-    background: #fff; 
-    padding: 20px; 
-    border-radius: 10px; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-  }
-  .filter-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-    gap: 15px; 
-  }
-  
-  /* Loading States */
-  .loading { text-align: center; padding: 40px; color: #6c757d; }
-  .error-message { 
-    background: #f8d7da; 
-    color: #721c24; 
-    padding: 15px; 
-    border-radius: 5px; 
-    margin: 10px 0; 
-    text-align: center; 
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing - Sanj Healthcare</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <!-- Date Picker -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Marketing – Doctor Agreements</h1>
+            <p class="text-gray-600 mt-2">Manage doctor agreements, track ROI, and monitor marketing expenses</p>
+        </header>
 
-<!-- Header Section -->
-<h1>Marketing – Doctor Agreements</h1>
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Agreements</h3>
+                <p id="totalAgreements" class="text-3xl font-bold text-blue-600">0</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Marketing Expense</h3>
+                <p id="totalExpense" class="text-3xl font-bold text-green-600">₹0</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Under Review / Discontinued</h3>
+                <p id="reviewDiscontinued" class="text-3xl font-bold text-yellow-600">0</p>
+            </div>
+        </div>
 
-<!-- Summary Cards -->
-<div class="summary-cards">
-  <div class="summary-card">
-    <h3>Total Agreements</h3>
-    <div class="value" id="totalAgreements">0</div>
-  </div>
-  <div class="summary-card">
-    <h3>Total Marketing Expense</h3>
-    <div class="value">₹<span id="totalExpense">0</span></div>
-  </div>
-  <div class="summary-card">
-    <h3>Under Review / Discontinued</h3>
-    <div class="value" id="reviewCount">0</div>
-  </div>
-</div>
+        <!-- Add Agreement Button -->
+        <div class="mb-6">
+            <button id="addAgreementBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+                + Add New Agreement
+            </button>
+        </div>
 
-<!-- Action Buttons -->
-<div class="action-buttons">
-  <button class="btn add-btn" onclick="showAgreementForm()">+ Add Agreement</button>
-  <button class="btn filter-btn" onclick="toggleFilterSection()">🔍 Filter Agreements</button>
-</div>
+        <!-- Agreements Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agreement Period</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agreement Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pending Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Return</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Ratio (%)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual Return</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agreementsTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Agreements will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="tableLoading" class="p-4 text-center">
+                <p class="text-gray-500">Loading agreements...</p>
+            </div>
+            <div id="tableEmpty" class="p-4 text-center hidden">
+                <p class="text-gray-500">No agreements found. <button id="addFirstAgreement" class="text-blue-600 hover:underline">Add the first agreement</button></p>
+            </div>
+        </div>
+    </div>
 
-<!-- Filter Section -->
-<div id="filterSection">
-  <h3>Filter Agreements</h3>
-  <div class="filter-grid">
-    <div class="form-group">
-      <label>Status</label>
-      <select id="filterStatus" onchange="applyFilters()">
-        <option value="">All Status</option>
-        <option value="active">Active</option>
-        <option value="completed">Completed</option>
-        <option value="discontinued">Discontinued</option>
-      </select>
+    <!-- Add/Edit Agreement Modal -->
+    <div id="agreementModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 id="modalTitle" class="text-xl font-semibold text-gray-800">Add New Agreement</h2>
+            </div>
+            <form id="agreementForm" class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="doctorName" class="block text-sm font-medium text-gray-700 mb-1">Doctor Name</label>
+                        <select id="doctorName" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select Doctor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="paymentFrequency" class="block text-sm font-medium text-gray-700 mb-1">Payment Frequency</label>
+                        <select id="paymentFrequency" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select Frequency</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="One-Time">One-Time</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="agreementStart" class="block text-sm font-medium text-gray-700 mb-1">Agreement Start Date</label>
+                        <input type="text" id="agreementStart" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 datepicker" required>
+                    </div>
+                    <div>
+                        <label for="agreementEnd" class="block text-sm font-medium text-gray-700 mb-1">Agreement End Date</label>
+                        <input type="text" id="agreementEnd" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 datepicker" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="agreementAmount" class="block text-sm font-medium text-gray-700 mb-1">Agreement Amount (₹)</label>
+                        <input type="number" id="agreementAmount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" min="0" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="paidAmount" class="block text-sm font-medium text-gray-700 mb-1">Paid Amount (₹)</label>
+                        <input type="number" id="paidAmount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" min="0" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="pendingAmount" class="block text-sm font-medium text-gray-700 mb-1">Pending Amount (₹)</label>
+                        <input type="number" id="pendingAmount" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                    </div>
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="Active">Active</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Discontinued">Discontinued</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="expectedReturn" class="block text-sm font-medium text-gray-700 mb-1">Expected Return (₹)</label>
+                        <input type="number" id="expectedReturn" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" min="0" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="expectedReturnRatio" class="block text-sm font-medium text-gray-700 mb-1">Expected Return Ratio (%)</label>
+                        <input type="number" id="expectedReturnRatio" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" min="0" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="returnValue" class="block text-sm font-medium text-gray-700 mb-1">Actual Return (₹)</label>
+                    <input type="number" id="returnValue" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" min="0" step="0.01" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea id="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Cancel
+                    </button>
+                    <button type="submit" id="saveBtn" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Save Agreement
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="form-group">
-      <label>Doctor</label>
-      <select id="filterDoctor" onchange="applyFilters()">
-        <option value="">All Doctors</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Date Range</label>
-      <input type="date" id="filterStartDate" onchange="applyFilters()">
-      <input type="date" id="filterEndDate" onchange="applyFilters()" style="margin-top: 5px;">
-    </div>
-    <div class="form-group">
-      <label>Performance</label>
-      <select id="filterPerformance" onchange="applyFilters()">
-        <option value="">All</option>
-        <option value="performing">Performing Well</option>
-        <option value="underperforming">Underperforming</option>
-      </select>
-    </div>
-  </div>
-</div>
 
-<!-- Add/Edit Agreement Form -->
-<div id="agreementForm">
-  <h3 id="formTitle">Add Doctor Agreement</h3>
-  <input type="hidden" id="agreementId">
-  
-  <div class="form-grid">
-    <div class="form-group">
-      <label>Doctor Name *</label>
-      <select id="doctorName" required>
-        <option value="">Select Doctor</option>
-        <!-- Dynamic options will be loaded -->
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label>Agreement Start Date *</label>
-      <input type="date" id="startDate" required>
-    </div>
-    
-    <div class="form-group">
-      <label>Agreement End Date *</label>
-      <input type="date" id="endDate" required>
-    </div>
-    
-    <div class="form-group">
-      <label>Agreement Amount (₹) *</label>
-      <input type="number" id="agreementAmount" step="0.01" min="0" required>
-    </div>
-    
-    <div class="form-group">
-      <label>Payment Frequency *</label>
-      <select id="paymentFrequency" required>
-        <option value="">Select Frequency</option>
-        <option value="monthly">Monthly</option>
-        <option value="quarterly">Quarterly</option>
-        <option value="one-time">One-Time</option>
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label>Paid Amount (₹)</label>
-      <input type="number" id="paidAmount" step="0.01" min="0" oninput="updatePendingAmount()">
-    </div>
-    
-    <div class="form-group">
-      <label>Pending Amount (₹)</label>
-      <input type="number" id="pendingAmount" step="0.01" readonly>
-    </div>
-    
-    <div class="form-group">
-      <label>Return Value (₹)</label>
-      <input type="number" id="returnValue" step="0.01" min="0">
-    </div>
-    
-    <div class="form-group">
-      <label>Status *</label>
-      <select id="status" required>
-        <option value="active">Active</option>
-        <option value="completed">Completed</option>
-        <option value="discontinued">Discontinued</option>
-      </select>
-    </div>
-    
-    <div class="form-group full-width">
-      <label>Notes</label>
-      <textarea id="notes" placeholder="Additional notes about this agreement..."></textarea>
-    </div>
-  </div>
-  
-  <div class="form-buttons">
-    <button class="btn add-btn" onclick="saveAgreement()">Save Agreement</button>
-    <button class="btn cancel-btn" onclick="hideAgreementForm()">Cancel</button>
-  </div>
-</div>
+    <!-- Alert Container -->
+    <div id="alertContainer" class="fixed top-4 right-4 z-50"></div>
 
-<!-- Agreements Table -->
-<div class="container">
-  <table id="agreementsTable">
-    <thead>
-      <tr>
-        <th data-sort="doctorName">Doctor Name</th>
-        <th data-sort="startDate">Agreement Period</th>
-        <th data-sort="agreementAmount">Agreement Amount</th>
-        <th data-sort="paidAmount">Paid Amount</th>
-        <th data-sort="pendingAmount">Pending Amount</th>
-        <th data-sort="returnValue">Return Value</th>
-        <th data-sort="status">Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="agreementsTableBody">
-      <!-- Dynamic content will be loaded here -->
-    </tbody>
-  </table>
-</div>
-
-<script src="../js/firebase-config.js"></script>
-<script src="../js/navigation.js"></script>
-<script src="../js/marketing.js"></script>
-
+    <!-- Firebase Config -->
+    <script src="../js/firebase-config.js"></script>
+    <!-- Marketing JS -->
+    <script src="../js/marketing.js"></script>
 </body>
 </html>

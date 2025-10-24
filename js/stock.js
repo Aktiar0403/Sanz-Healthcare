@@ -1,627 +1,512 @@
-// js/stock.js - COMPLETE SCHEME-AWARE STOCK MANAGEMENT
-console.log('📊 Loading stock module...');
+// Stock Management Module for Sanj Healthcare App
+// Using Firebase Firestore v8
 
-const db = firebase.firestore();
-let stockEntries = [];
+// Global variables
 let products = [];
-let currentTab = 'all';
-const lowStockThreshold = 10;
+let customers = [];
+let stockItems = [];
+let filteredStockItems = [];
 
-// DOM Elements
-const productSelect = document.getElementById('productSelect');
-const schemeProductSelect = document.getElementById('schemeProductSelect');
-const stockTableBody = document.querySelector('#stockTable tbody');
-
-// Summary elements
-const totalProductsElem = document.getElementById('totalProducts');
-const lowStockCountElem = document.getElementById('lowStockCount');
-const expiryCountElem = document.getElementById('expiryCount');
-const schemeLiabilitiesElem = document.getElementById('schemeLiabilities');
-
-// Initialize when page loads
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    if (typeof firebase === 'undefined' || !firebase.apps.length) {
-        console.error('Firebase not available');
-        showErrorMessage('Firebase not loaded. Please refresh the page.');
-        return;
-    }
-    
-    console.log('Firebase available, loading stock data...');
-    loadProductsAndStock();
+    initializeStockModule();
 });
 
-// Load both products and stock data
-async function loadProductsAndStock() {
-    try {
-        showLoadingState();
-        console.log('Loading products and stock data...');
-        
-        // Load products first
-        const productsSnapshot = await db.collection('products').get();
-        products = productsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        
-        loadProductOptions(products);
-        
-        // Load stock entries
-        const stockSnapshot = await db.collection('stock').orderBy('date', 'desc').get();
-        stockEntries = stockSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        
-        updateSummary();
-        renderStockTable();
-        
-    } catch (error) {
-        console.error('Error loading data:', error);
-        showErrorMessage('Error loading stock data: ' + error.message);
-    }
+function initializeStockModule() {
+    // Set today's date as default for date fields
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('purchase-date').value = today;
+    document.getElementById('sales-date').value = today;
+    
+    // Set up collapsible sections
+    setupCollapsibleSections();
+    
+    // Load initial data
+    loadProducts();
+    loadCustomers();
+    loadStockData();
+    
+    // Set up event listeners
+    document.getElementById('purchase-form').addEventListener('submit', handlePurchaseSubmit);
+    document.getElementById('sales-form').addEventListener('submit', handleSalesSubmit);
+    document.getElementById('sales-product').addEventListener('change', updateBatchOptions);
+    document.getElementById('stock-search').addEventListener('input', filterStockTable);
+    document.getElementById('export-btn').addEventListener('click', exportStockToCSV);
 }
 
-// Load products to dropdowns
-function loadProductOptions(products) {
-    if (!productSelect || !schemeProductSelect) return;
+// Set up collapsible sections
+function setupCollapsibleSections() {
+    const sections = [
+        { header: 'purchase-header', content: 'purchase-content' },
+        { header: 'sales-header', content: 'sales-content' },
+        { header: 'summary-header', content: 'summary-content' }
+    ];
     
-    // Clear both dropdowns
-    productSelect.innerHTML = '<option value="">Select Product</option>';
-    schemeProductSelect.innerHTML = '<option value="">Select Product</option>';
-    
-    products.forEach(product => {
-        const option = document.createElement('option');
-        option.value = product.id;
-        option.textContent = `${product.name} (Batch: ${product.batch || 'N/A'})`;
-        productSelect.appendChild(option.cloneNode(true));
-        schemeProductSelect.appendChild(option);
+    sections.forEach(section => {
+        const header = document.getElementById(section.header);
+        const content = document.getElementById(section.content);
+        
+        header.addEventListener('click', () => {
+            content.classList.toggle('hidden');
+            header.classList.toggle('collapsed');
+        });
     });
 }
 
-// Update summary cards
-function updateSummary() {
-    if (!totalProductsElem) return;
-    
-    // Total products
-    totalProductsElem.textContent = products.length;
-    
-    // Low stock count
-    const lowStockProducts = products.filter(p => p.stock < lowStockThreshold);
-    lowStockCountElem.textContent = lowStockProducts.length;
-    
-    // Near expiry count (within 30 days)
-    const today = new Date();
-    const nearExpiryProducts = products.filter(p => {
-        if (!p.expiry) return false;
-        const expiryDate = new Date(p.expiry);
-        const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
-        return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
-    });
-    expiryCountElem.textContent = nearExpiryProducts.length;
-    
-    // Scheme liabilities (calculate from scheme sales)
-    const schemeLiabilities = stockEntries
-        .filter(entry => entry.type === 'scheme_sale')
-        .reduce((total, entry) => total + (entry.freeQuantity || 0), 0);
-    schemeLiabilitiesElem.textContent = schemeLiabilities;
-}
-
-// Switch between tabs
-// REPLACE the switchTab function in stock.js with this version:
-function switchTab(tabName) {
-    console.log('📊 Switching stock tab to:', tabName);
-    
-    try {
-        // Safely update tab buttons - only if they exist
-        const tabs = document.querySelectorAll('.tab');
-        if (tabs && tabs.length > 0) {
-            tabs.forEach(tab => {
-                if (tab && tab.classList) {
-                    tab.classList.remove('active');
-                }
+// Load products from Firestore
+function loadProducts() {
+    db.collection("products").get()
+        .then((querySnapshot) => {
+            products = [];
+            const purchaseSelect = document.getElementById('purchase-product');
+            const salesSelect = document.getElementById('sales-product');
+            
+            // Clear existing options (except the first one)
+            purchaseSelect.innerHTML = '<option value="">Select Product</option>';
+            salesSelect.innerHTML = '<option value="">Select Product</option>';
+            
+            querySnapshot.forEach((doc) => {
+                const product = {
+                    id: doc.id,
+                    ...doc.data()
+                };
+                products.push(product);
+                
+                // Add to dropdowns
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = product.name;
+                option.setAttribute('data-retailer-price', product.retailerPrice || 0);
+                
+                purchaseSelect.appendChild(option.cloneNode(true));
+                salesSelect.appendChild(option);
             });
-            
-            // Find the active tab safely
-            const activeTab = document.querySelector(`.tab[onclick*="switchTab('${tabName}')"]`) || 
-                             document.querySelector(`.tab[onclick*='switchTab("${tabName}")']`);
-            
-            if (activeTab && activeTab.classList) {
-                activeTab.classList.add('active');
-            }
-        }
-        
-        // Filter entries based on tab
-        let filteredEntries = stockEntries;
-        
-        switch (tabName) {
-            case 'low':
-                const lowStockProductIds = products
-                    .filter(p => (p.stock || 0) < lowStockThreshold)
-                    .map(p => p.id);
-                filteredEntries = stockEntries.filter(entry => 
-                    lowStockProductIds.includes(entry.productId)
-                );
-                break;
-                
-            case 'scheme':
-                filteredEntries = stockEntries.filter(entry => 
-                    entry.type === 'scheme_sale'
-                );
-                break;
-                
-            case 'expired':
-                const today = new Date();
-                const expiredProductIds = products.filter(p => {
-                    if (!p.expiry) return false;
-                    try {
-                        const expiryDate = new Date(p.expiry);
-                        return expiryDate < today;
-                    } catch (e) {
-                        return false;
-                    }
-                }).map(p => p.id);
-                filteredEntries = stockEntries.filter(entry => 
-                    expiredProductIds.includes(entry.productId)
-                );
-                break;
-                
-            default: // 'all'
-                filteredEntries = stockEntries;
-        }
-        
-        renderStockTable(filteredEntries);
-        
-    } catch (error) {
-        console.error('❌ Error in switchTab:', error);
-    }
+        })
+        .catch((error) => {
+            console.error("Error loading products: ", error);
+            showAlert("Error loading products. Please refresh the page.", "danger");
+        });
 }
 
-// ADD this line to make sure the function is available globally
-window.switchTab = switchTab;
+// Load customers from Firestore
+function loadCustomers() {
+    db.collection("customers").get()
+        .then((querySnapshot) => {
+            customers = [];
+            const customerSelect = document.getElementById('sales-customer');
+            
+            // Clear existing options (except the first one)
+            customerSelect.innerHTML = '<option value="">Select Customer</option>';
+            
+            querySnapshot.forEach((doc) => {
+                const customer = {
+                    id: doc.id,
+                    ...doc.data()
+                };
+                customers.push(customer);
+                
+                // Add to dropdown
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = customer.name || customer.companyName || 'Unknown Customer';
+                customerSelect.appendChild(option);
+            });
+        })
+        .catch((error) => {
+            console.error("Error loading customers: ", error);
+            showAlert("Error loading customers. Please refresh the page.", "danger");
+        });
+}
 
-// Show Add Stock Form
-function showAddStockForm() {
-    document.getElementById('formTitle').textContent = "Add Stock Entry";
-    document.getElementById('stockForm').style.display = 'block';
-    document.getElementById('schemeSaleForm').style.display = 'none';
-    
-    // Clear form
-    document.getElementById('stockId').value = '';
-    ['batch', 'quantity', 'invoice', 'date'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) element.value = '';
+// Load stock data from Firestore with real-time updates
+function loadStockData() {
+    db.collection("stock").onSnapshot((querySnapshot) => {
+        stockItems = [];
+        const tableBody = document.getElementById('stock-table-body');
+        
+        // Clear loading message
+        tableBody.innerHTML = '';
+        
+        querySnapshot.forEach((doc) => {
+            const stockItem = {
+                id: doc.id,
+                ...doc.data()
+            };
+            stockItems.push(stockItem);
+        });
+        
+        // Update filtered items and display
+        filteredStockItems = [...stockItems];
+        displayStockTable();
+    }, (error) => {
+        console.error("Error loading stock data: ", error);
+        showAlert("Error loading stock data. Please refresh the page.", "danger");
     });
-    if (productSelect) productSelect.value = '';
-    if (document.getElementById('movementType')) {
-        document.getElementById('movementType').value = 'purchase';
-    }
 }
 
-// Show Scheme Sale Form
-function showSchemeSaleForm() {
-    document.getElementById('schemeFormTitle').textContent = "Record Scheme Sale";
-    document.getElementById('schemeSaleForm').style.display = 'block';
-    document.getElementById('stockForm').style.display = 'none';
+// Display stock data in table
+function displayStockTable() {
+    const tableBody = document.getElementById('stock-table-body');
     
-    // Clear form
-    document.getElementById('schemeProductSelect').value = '';
-    document.getElementById('stockistName').value = '';
-    document.getElementById('billedQuantity').value = '';
-    document.getElementById('saleInvoice').value = '';
-    document.getElementById('saleDate').value = '';
-    document.getElementById('schemePreview').style.display = 'none';
-}
-
-// Hide Forms
-function hideStockForm() {
-    document.getElementById('stockForm').style.display = 'none';
-}
-
-function hideSchemeForm() {
-    document.getElementById('schemeSaleForm').style.display = 'none';
-}
-
-// Calculate bonus based on scheme
-function calculateBonus(billedQuantity, bonusScheme) {
-    if (!bonusScheme) return { freeQuantity: 0, scheme: 'none' };
-    
-    let freeQuantity = 0;
-    let schemeDescription = '';
-    
-    if (bonusScheme.includes('+')) {
-        // "10+1" scheme
-        const [buy, free] = bonusScheme.split('+').map(Number);
-        freeQuantity = Math.floor(billedQuantity / buy) * free;
-        schemeDescription = `Buy ${buy} Get ${free} Free`;
-    }
-    else if (bonusScheme.includes('%')) {
-        // "10% extra" scheme
-        const percentage = parseInt(bonusScheme);
-        freeQuantity = Math.floor(billedQuantity * (percentage / 100));
-        schemeDescription = `${percentage}% Extra Free`;
-    }
-    else if (bonusScheme === '1+1') {
-        // "Buy 1 Get 1"
-        freeQuantity = Math.floor(billedQuantity / 1) * 1;
-        schemeDescription = 'Buy 1 Get 1 Free';
-    }
-    else if (bonusScheme === 'Free Gift') {
-        freeQuantity = 0; // Handle gifts separately
-        schemeDescription = 'Free Gift with Purchase';
-    }
-    else {
-        schemeDescription = bonusScheme;
-    }
-    
-    return {
-        freeQuantity: freeQuantity,
-        scheme: bonusScheme,
-        description: schemeDescription,
-        totalQuantity: billedQuantity + freeQuantity
-    };
-}
-
-// Preview scheme when product selected
-document.getElementById('schemeProductSelect')?.addEventListener('change', async function() {
-    const productId = this.value;
-    if (!productId) {
-        document.getElementById('schemePreview').style.display = 'none';
+    if (filteredStockItems.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="loading">No stock items found</td></tr>';
         return;
     }
     
-    const product = await getProductById(productId);
-    if (product && product.bonus) {
-        const bonusDetails = calculateBonus(1, product.bonus); // Preview for 1 unit
-        document.getElementById('schemeDetails').textContent = 
-            `${product.bonus} - ${bonusDetails.description}`;
-        document.getElementById('schemePreview').style.display = 'block';
+    tableBody.innerHTML = '';
+    
+    filteredStockItems.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Apply styling for low stock
+        if (item.quantity <= 5) {
+            row.classList.add('critical-stock');
+        } else if (item.quantity <= 10) {
+            row.classList.add('low-stock');
+        }
+        
+        // Format dates
+        const lastUpdated = item.lastUpdated ? 
+            new Date(item.lastUpdated.toDate()).toLocaleDateString() : 'N/A';
+        
+        // Calculate stock value
+        const stockValue = (item.quantity * (item.salePrice || 0)).toFixed(2);
+        
+        row.innerHTML = `
+            <td>${item.productName || 'Unknown Product'}</td>
+            <td>${item.batchNo || 'N/A'}</td>
+            <td>${item.quantity || 0}</td>
+            <td>₹${(item.purchasePrice || 0).toFixed(2)}</td>
+            <td>₹${(item.salePrice || 0).toFixed(2)}</td>
+            <td>₹${stockValue}</td>
+            <td>${item.supplier || 'N/A'}</td>
+            <td>${lastUpdated}</td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// Update batch options based on selected product
+function updateBatchOptions() {
+    const productId = document.getElementById('sales-product').value;
+    const batchSelect = document.getElementById('sales-batch');
+    
+    // Clear existing options
+    batchSelect.innerHTML = '<option value="">Select Batch</option>';
+    
+    if (!productId) return;
+    
+    // Find batches for the selected product
+    const productBatches = stockItems.filter(item => 
+        item.productId === productId && item.quantity > 0
+    );
+    
+    if (productBatches.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No batches available';
+        option.disabled = true;
+        batchSelect.appendChild(option);
+        return;
+    }
+    
+    // Add batch options
+    productBatches.forEach(batch => {
+        const option = document.createElement('option');
+        option.value = batch.batchNo;
+        option.textContent = `${batch.batchNo} (Available: ${batch.quantity})`;
+        option.setAttribute('data-purchase-price', batch.purchasePrice || 0);
+        option.setAttribute('data-sale-price', batch.salePrice || 0);
+        batchSelect.appendChild(option);
+    });
+    
+    // Auto-set sale price based on selected batch
+    batchSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const salePrice = selectedOption.getAttribute('data-sale-price');
+            document.getElementById('sales-price').value = salePrice;
+        }
+    });
+}
+
+// Handle purchase form submission
+function handlePurchaseSubmit(e) {
+    e.preventDefault();
+    
+    const productId = document.getElementById('purchase-product').value;
+    const batchNo = document.getElementById('purchase-batch').value;
+    const quantity = parseInt(document.getElementById('purchase-quantity').value);
+    const purchasePrice = parseFloat(document.getElementById('purchase-price').value);
+    const supplier = document.getElementById('purchase-supplier').value;
+    const purchaseDate = document.getElementById('purchase-date').value;
+    const invoiceNo = document.getElementById('purchase-invoice').value;
+    
+    // Validate form
+    if (!productId || !batchNo || !quantity || !purchasePrice || !supplier || !purchaseDate) {
+        showAlert("Please fill in all required fields.", "danger");
+        return;
+    }
+    
+    // Find selected product
+    const selectedProduct = products.find(p => p.id === productId);
+    if (!selectedProduct) {
+        showAlert("Selected product not found.", "danger");
+        return;
+    }
+    
+    // Calculate default sale price (20% markup by default)
+    const salePrice = selectedProduct.retailerPrice || (purchasePrice * 1.2);
+    
+    // Check if stock item already exists with same product and batch
+    const existingStockItem = stockItems.find(item => 
+        item.productId === productId && item.batchNo === batchNo
+    );
+    
+    if (existingStockItem) {
+        // Update existing stock item
+        const newQuantity = existingStockItem.quantity + quantity;
+        
+        db.collection("stock").doc(existingStockItem.id).update({
+            quantity: newQuantity,
+            purchasePrice: purchasePrice,
+            salePrice: salePrice,
+            supplier: supplier,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            // Add finance record for purchase
+            addFinanceRecord(
+                "Expense",
+                "Stock Purchase",
+                quantity * purchasePrice,
+                `Purchase of ${quantity} units of ${selectedProduct.name} (Batch: ${batchNo})`,
+                purchaseDate
+            );
+            
+            showAlert("Purchase added successfully! Stock quantity updated.", "success");
+            document.getElementById('purchase-form').reset();
+            document.getElementById('purchase-date').value = new Date().toISOString().split('T')[0];
+        })
+        .catch((error) => {
+            console.error("Error updating stock: ", error);
+            showAlert("Error updating stock. Please try again.", "danger");
+        });
     } else {
-        document.getElementById('schemePreview').style.display = 'none';
-    }
-});
-
-// Save Stock Entry
-async function saveStock() {
-    try {
-        const productId = productSelect.value;
-        const batch = document.getElementById('batch').value;
-        const quantity = parseInt(document.getElementById('quantity').value);
-        const invoice = document.getElementById('invoice').value;
-        const date = document.getElementById('date').value;
-        const movementType = document.getElementById('movementType').value;
-
-        // Validation
-        if (!productId || !batch || !quantity || !date) {
-            alert('Please fill in all required fields');
-            return;
-        }
-
-        const product = await getProductById(productId);
-        if (!product) {
-            alert('Selected product not found');
-            return;
-        }
-
-        const stockData = {
+        // Create new stock item
+        db.collection("stock").add({
             productId: productId,
-            productName: product.name,
-            batch: batch,
+            productName: selectedProduct.name,
+            batchNo: batchNo,
             quantity: quantity,
-            invoice: invoice,
-            date: date,
-            type: movementType,
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
-
-        // Add new stock entry
-        const docRef = await db.collection('stock').add(stockData);
-        console.log('Stock entry added with ID:', docRef.id);
-        
-        // Update product stock
-        let newStock = product.stock || 0;
-        if (movementType === 'purchase' || movementType === 'return') {
-            newStock += quantity;
-        } else if (movementType === 'adjustment') {
-            // For adjustments, quantity could be positive or negative
-            newStock += quantity;
-        }
-        
-        await db.collection('products').doc(productId).update({
-            stock: newStock,
-            updatedAt: new Date()
+            purchasePrice: purchasePrice,
+            salePrice: salePrice,
+            supplier: supplier,
+            purchaseDate: purchaseDate,
+            invoiceNo: invoiceNo,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            // Add finance record for purchase
+            addFinanceRecord(
+                "Expense",
+                "Stock Purchase",
+                quantity * purchasePrice,
+                `Purchase of ${quantity} units of ${selectedProduct.name} (Batch: ${batchNo})`,
+                purchaseDate
+            );
+            
+            showAlert("Purchase added successfully!", "success");
+            document.getElementById('purchase-form').reset();
+            document.getElementById('purchase-date').value = new Date().toISOString().split('T')[0];
+        })
+        .catch((error) => {
+            console.error("Error adding purchase: ", error);
+            showAlert("Error adding purchase. Please try again.", "danger");
         });
-
-        showTemporaryMessage('Stock entry added successfully!', 'success');
-        hideStockForm();
-        await loadProductsAndStock();
-        
-    } catch (error) {
-        console.error('Error saving stock entry:', error);
-        showTemporaryMessage('Error saving stock entry: ' + error.message, 'error');
     }
 }
 
-// Save Scheme Sale
-async function saveSchemeSale() {
-    try {
-        const productId = document.getElementById('schemeProductSelect').value;
-        const stockistName = document.getElementById('stockistName').value;
-        const billedQuantity = parseInt(document.getElementById('billedQuantity').value);
-        const invoice = document.getElementById('saleInvoice').value;
-        const date = document.getElementById('saleDate').value;
-
-        // Validation
-        if (!productId || !stockistName || !billedQuantity || !date) {
-            alert('Please fill in all required fields');
-            return;
-        }
-
-        const product = await getProductById(productId);
-        if (!product) {
-            alert('Selected product not found');
-            return;
-        }
-
-        // Calculate bonus
-        const bonusDetails = calculateBonus(billedQuantity, product.bonus);
-        
-        const schemeSaleData = {
-            productId: productId,
-            productName: product.name,
-            stockistName: stockistName,
-            billedQuantity: billedQuantity,
-            freeQuantity: bonusDetails.freeQuantity,
-            totalQuantity: bonusDetails.totalQuantity,
-            scheme: product.bonus,
-            schemeDescription: bonusDetails.description,
-            invoice: invoice,
-            date: date,
-            type: 'scheme_sale',
-            stockistPrice: product.stockistPrice,
-            totalValue: billedQuantity * product.stockistPrice,
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
-
-        // Add scheme sale entry
-        const docRef = await db.collection('stock').add(schemeSaleData);
-        console.log('Scheme sale recorded with ID:', docRef.id);
-        
-        // Update product stock (reduce by total quantity)
-        const newStock = (product.stock || 0) - bonusDetails.totalQuantity;
-        await db.collection('products').doc(productId).update({
-            stock: newStock,
-            updatedAt: new Date()
-        });
-
-        showTemporaryMessage(`Scheme sale recorded! ${bonusDetails.freeQuantity} free units given.`, 'success');
-        hideSchemeForm();
-        await loadProductsAndStock();
-        
-    } catch (error) {
-        console.error('Error saving scheme sale:', error);
-        showTemporaryMessage('Error saving scheme sale: ' + error.message, 'error');
-    }
-}
-
-// Render Stock Table with filtering
-function renderStockTable() {
-    if (!stockTableBody) return;
+// Handle sales form submission
+function handleSalesSubmit(e) {
+    e.preventDefault();
     
-    stockTableBody.innerHTML = '';
-
-    if (stockEntries.length === 0) {
-        stockTableBody.innerHTML = `
-            <tr>
-                <td colspan="10" style="text-align: center; padding: 40px; color: #6c757d;">
-                    <h3>No stock entries found</h3>
-                    <p>Click "Add Stock Entry" to create your first stock record</p>
-                </td>
-            </tr>
-        `;
+    const productId = document.getElementById('sales-product').value;
+    const batchNo = document.getElementById('sales-batch').value;
+    const quantity = parseInt(document.getElementById('sales-quantity').value);
+    const salePrice = parseFloat(document.getElementById('sales-price').value);
+    const customerId = document.getElementById('sales-customer').value;
+    const saleDate = document.getElementById('sales-date').value;
+    const reference = document.getElementById('sales-reference').value;
+    
+    // Validate form
+    if (!productId || !batchNo || !quantity || !salePrice || !customerId || !saleDate) {
+        showAlert("Please fill in all required fields.", "danger");
         return;
     }
-
-    // Filter entries based on current tab
-    let filteredEntries = stockEntries;
     
-    switch (currentTab) {
-        case 'low':
-            // Show entries for products with low stock
-            const lowStockProductIds = products
-                .filter(p => p.stock < lowStockThreshold)
-                .map(p => p.id);
-            filteredEntries = stockEntries.filter(entry => 
-                lowStockProductIds.includes(entry.productId)
-            );
-            break;
-            
-        case 'scheme':
-            // Show only scheme sales
-            filteredEntries = stockEntries.filter(entry => 
-                entry.type === 'scheme_sale'
-            );
-            break;
-            
-        case 'expired':
-            // Show entries for near-expiry products
-            const today = new Date();
-            const expiredProductIds = products.filter(p => {
-                if (!p.expiry) return false;
-                const expiryDate = new Date(p.expiry);
-                return expiryDate < today;
-            }).map(p => p.id);
-            filteredEntries = stockEntries.filter(entry => 
-                expiredProductIds.includes(entry.productId)
-            );
-            break;
-            
-        default:
-            // 'all' - show all entries
-            filteredEntries = stockEntries;
+    // Find selected product and customer
+    const selectedProduct = products.find(p => p.id === productId);
+    const selectedCustomer = customers.find(c => c.id === customerId);
+    
+    if (!selectedProduct) {
+        showAlert("Selected product not found.", "danger");
+        return;
     }
-
-    filteredEntries.forEach(entry => {
-        const product = products.find(p => p.id === entry.productId);
-        const tr = document.createElement('tr');
-
-        // Apply styling based on conditions
-        if (entry.type === 'scheme_sale') {
-            tr.classList.add('scheme-sale');
-        }
-        if (product && product.stock < lowStockThreshold) {
-            tr.classList.add('low-stock');
-        }
-
-        tr.innerHTML = `
-            <td>
-                ${entry.productName || 'Unknown'}
-                ${entry.scheme ? `<span class="scheme-badge">Scheme</span>` : ''}
-            </td>
-            <td>${entry.batch || 'N/A'}</td>
-            <td>
-                ${entry.type === 'scheme_sale' ? 'Scheme Sale' : 
-                  entry.type === 'purchase' ? 'Purchase' :
-                  entry.type === 'return' ? 'Return' : 'Adjustment'}
-                ${entry.stockistName ? `<br><small>to ${entry.stockistName}</small>` : ''}
-            </td>
-            <td>${entry.billedQuantity || entry.quantity}</td>
-            <td>
-                ${entry.freeQuantity ? `
-                    <span class="free-badge">${entry.freeQuantity} free</span>
-                ` : '-'}
-            </td>
-            <td>${entry.totalQuantity || entry.quantity}</td>
-            <td>
-                ${entry.type === 'purchase' || entry.type === 'return' ? 
-                  `<span style="color: green">+${entry.quantity}</span>` :
-                  entry.type === 'scheme_sale' ?
-                  `<span style="color: red">-${entry.totalQuantity}</span>` :
-                  `<span style="color: orange">${entry.quantity >= 0 ? '+' : ''}${entry.quantity}</span>`}
-            </td>
-            <td>${entry.invoice || 'N/A'}</td>
-            <td>${new Date(entry.date).toLocaleDateString()}</td>
-            <td>
-                <button class="btn delete-btn" onclick="deleteStockEntry('${entry.id}')">Delete</button>
-            </td>
-        `;
-        stockTableBody.appendChild(tr);
+    
+    if (!selectedCustomer) {
+        showAlert("Selected customer not found.", "danger");
+        return;
+    }
+    
+    // Find stock item
+    const stockItem = stockItems.find(item => 
+        item.productId === productId && item.batchNo === batchNo
+    );
+    
+    if (!stockItem) {
+        showAlert("Selected batch not found in stock.", "danger");
+        return;
+    }
+    
+    // Check if enough stock is available
+    if (stockItem.quantity < quantity) {
+        showAlert(`Insufficient stock! Only ${stockItem.quantity} units available.`, "danger");
+        return;
+    }
+    
+    // Calculate new quantity
+    const newQuantity = stockItem.quantity - quantity;
+    
+    // Update stock
+    db.collection("stock").doc(stockItem.id).update({
+        quantity: newQuantity,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(() => {
+        // Add finance record for sale
+        addFinanceRecord(
+            "Revenue",
+            "Product Sale",
+            quantity * salePrice,
+            `Sale of ${quantity} units of ${selectedProduct.name} to ${selectedCustomer.name || selectedCustomer.companyName} (Batch: ${batchNo})`,
+            saleDate
+        );
+        
+        // Optionally, record sale details in a sales collection
+        db.collection("sales").add({
+            productId: productId,
+            productName: selectedProduct.name,
+            batchNo: batchNo,
+            quantity: quantity,
+            salePrice: salePrice,
+            totalAmount: quantity * salePrice,
+            customerId: customerId,
+            customerName: selectedCustomer.name || selectedCustomer.companyName,
+            saleDate: saleDate,
+            reference: reference,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        showAlert("Sale recorded successfully!", "success");
+        document.getElementById('sales-form').reset();
+        document.getElementById('sales-date').value = new Date().toISOString().split('T')[0];
+        updateBatchOptions(); // Refresh batch options
+    })
+    .catch((error) => {
+        console.error("Error recording sale: ", error);
+        showAlert("Error recording sale. Please try again.", "danger");
     });
 }
 
-// Delete Stock Entry
-async function deleteStockEntry(id) {
-    if (confirm("Are you sure you want to delete this stock entry? This will affect stock calculations.")) {
-        try {
-            // Get the entry first to know what we're deleting
-            const entry = stockEntries.find(e => e.id === id);
-            if (!entry) {
-                alert('Entry not found');
-                return;
-            }
-
-            await db.collection('stock').doc(id).delete();
-            console.log('Stock entry deleted:', id);
-            
-            // Note: In a real system, you might want to recalculate product stock
-            // when deleting entries. This is simplified for demo purposes.
-            
-            showTemporaryMessage('Stock entry deleted successfully!', 'success');
-            await loadProductsAndStock();
-            
-        } catch (error) {
-            console.error('Error deleting stock entry:', error);
-            showTemporaryMessage('Error deleting stock entry: ' + error.message, 'error');
-        }
-    }
+// Add finance record
+function addFinanceRecord(type, category, amount, description, date) {
+    db.collection("finance").add({
+        type: type,
+        category: category,
+        amount: amount,
+        description: description,
+        date: date,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .catch((error) => {
+        console.error("Error adding finance record: ", error);
+    });
 }
 
-// Show loading state
-function showLoadingState() {
-    if (stockTableBody) {
-        stockTableBody.innerHTML = `
-            <tr>
-                <td colspan="10" class="loading">
-                    <h3>Loading stock data...</h3>
-                    <p>Please wait while we load your stock information</p>
-                </td>
-            </tr>
-        `;
+// Filter stock table based on search input
+function filterStockTable() {
+    const searchTerm = document.getElementById('stock-search').value.toLowerCase();
+    
+    if (!searchTerm) {
+        filteredStockItems = [...stockItems];
+    } else {
+        filteredStockItems = stockItems.filter(item => 
+            (item.productName && item.productName.toLowerCase().includes(searchTerm)) ||
+            (item.batchNo && item.batchNo.toLowerCase().includes(searchTerm))
+        );
     }
+    
+    displayStockTable();
 }
 
-// Show error message
-function showErrorMessage(message) {
-    if (stockTableBody) {
-        stockTableBody.innerHTML = `
-            <tr>
-                <td colspan="10" class="error-message">
-                    <h3>Error Loading Stock Data</h3>
-                    <p>${message}</p>
-                    <button class="btn add-btn" onclick="loadProductsAndStock()" style="margin-top: 10px;">Try Again</button>
-                </td>
-            </tr>
-        `;
+// Export stock data to CSV
+function exportStockToCSV() {
+    if (filteredStockItems.length === 0) {
+        showAlert("No data to export.", "danger");
+        return;
     }
+    
+    // Create CSV header
+    let csvContent = "Product Name,Batch No.,Available Quantity,Purchase Rate,Sale Rate,Stock Value,Supplier,Last Updated\n";
+    
+    // Add data rows
+    filteredStockItems.forEach(item => {
+        const lastUpdated = item.lastUpdated ? 
+            new Date(item.lastUpdated.toDate()).toLocaleDateString() : 'N/A';
+        const stockValue = (item.quantity * (item.salePrice || 0)).toFixed(2);
+        
+        const row = [
+            `"${item.productName || 'Unknown Product'}"`,
+            `"${item.batchNo || 'N/A'}"`,
+            item.quantity || 0,
+            (item.purchasePrice || 0).toFixed(2),
+            (item.salePrice || 0).toFixed(2),
+            stockValue,
+            `"${item.supplier || 'N/A'}"`,
+            `"${lastUpdated}"`
+        ].join(',');
+        
+        csvContent += row + '\n';
+    });
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `stock-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showAlert("Stock data exported successfully!", "success");
 }
 
-// Temporary message helper (same as in products.js)
-function showTemporaryMessage(message, type = 'info') {
-    const messageDiv = document.createElement('div');
-    messageDiv.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 5px;
-        color: white;
-        z-index: 1000;
-        font-weight: bold;
-        transition: opacity 0.3s;
-    `;
+// Show alert message
+function showAlert(message, type) {
+    const alertDiv = document.getElementById('stock-alert');
     
-    messageDiv.style.backgroundColor = type === 'success' ? '#28a745' : 
-                                      type === 'error' ? '#dc3545' : '#17a2b8';
-    messageDiv.textContent = message;
+    alertDiv.textContent = message;
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.classList.remove('hidden');
     
-    document.body.appendChild(messageDiv);
-    
+    // Auto-hide after 5 seconds
     setTimeout(() => {
-        messageDiv.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(messageDiv), 300);
-    }, 3000);
+        alertDiv.classList.add('hidden');
+    }, 5000);
 }
-
-// Make functions globally available
-window.showAddStockForm = showAddStockForm;
-window.showSchemeSaleForm = showSchemeSaleForm;
-window.hideStockForm = hideStockForm;
-window.hideSchemeForm = hideSchemeForm;
-window.saveStock = saveStock;
-window.saveSchemeSale = saveSchemeSale;
-window.deleteStockEntry = deleteStockEntry;
-window.switchTab = switchTab;
-window.loadProductsAndStock = loadProductsAndStock;
-
-// Stock adjustment form (simplified version)
-function showAdjustmentForm() {
-    document.getElementById('formTitle').textContent = "Stock Adjustment";
-    document.getElementById('stockForm').style.display = 'block';
-    document.getElementById('schemeSaleForm').style.display = 'none';
-    
-    // Clear form and set type to adjustment
-    document.getElementById('stockId').value = '';
-    ['batch', 'invoice', 'date'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) element.value = '';
-    });
-    document.getElementById('quantity').value = '';
-    document.getElementById('quantity').placeholder = 'Adjustment Quantity (+/-)';
-    if (productSelect) productSelect.value = '';
-    if (document.getElementById('movementType')) {
-        document.getElementById('movementType').value = 'adjustment';
-    }
-}
-
-console.log('📊 Stock module loaded successfully!');
