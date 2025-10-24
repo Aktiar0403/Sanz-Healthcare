@@ -10,16 +10,23 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+try {
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+}
 
 // Initialize Firebase services
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// Enable offline persistence for Firestore
+// Enable offline persistence with error handling
 db.enablePersistence()
   .catch((err) => {
     console.log("Firebase persistence error: ", err);
+    // Continue without offline persistence
   });
 
 // Make Firebase instances globally available

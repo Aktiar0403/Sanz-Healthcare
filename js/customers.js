@@ -623,3 +623,18 @@ function updateSummaryCards() {
     document.getElementById('totalExpectedReturn').textContent = `₹${totalExpectedReturn.toFixed(2)}`;
     document.getElementById('totalExpenses').textContent = `₹${totalExpenses.toFixed(2)}`;
 }
+// Export for navigation system  
+window.initializeCustomersModule = function() {
+    console.log('Customers module initialized via navigation');
+    if (document.getElementById('customerForm')) {
+        initializeCustomersModule();
+    }
+};
+
+// Auto-initialize if on customers page
+if (document.getElementById('customerForm')) {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Auto-initializing customers module');
+        initializeCustomersModule();
+    });
+}

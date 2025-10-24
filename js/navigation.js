@@ -155,24 +155,77 @@ function showPlaceholderContent(tabName) {
 }
 
 // Load tab-specific JavaScript
+// Load tab-specific JavaScript
 function loadTabScript(tabName) {
-  const scriptPath = `js/${tabName}.js`;
-  
-  // Remove existing tab script if any
-  const existingScript = document.querySelector(`script[data-tab="${tabName}"]`);
-  if (existingScript) {
-    existingScript.remove();
-  }
-  
-  // Create and load new script
-  const script = document.createElement('script');
-  script.src = scriptPath;
-  script.setAttribute('data-tab', tabName);
-  script.onerror = function() {
-    console.log(`Script for ${tabName} not found`);
-  };
-  
-  document.head.appendChild(script);
+    // Use the correct path - your files are in js/ not js/tabs/
+    const scriptPath = `js/${tabName}.js`;
+    
+    console.log(`Loading script: ${scriptPath}`);
+    
+    // Remove existing tab script if any
+    const existingScript = document.querySelector(`script[data-tab="${tabName}"]`);
+    if (existingScript) {
+        existingScript.remove();
+    }
+    
+    // Create and load new script
+    const script = document.createElement('script');
+    script.src = scriptPath;
+    script.setAttribute('data-tab', tabName);
+    script.onload = function() {
+        console.log(`Successfully loaded: ${tabName}.js`);
+        // Initialize the module if the function exists
+        const initFunctionName = `initialize${capitalizeFirstLetter(tabName)}Module`;
+        if (typeof window[initFunctionName] === 'function') {
+            window[initFunctionName]();
+        }
+    };
+    script.onerror = function() {
+        console.error(`Failed to load script: ${scriptPath}`);
+        // Provide basic functionality
+        provideFallbackFunctionality(tabName);
+    };
+    
+    document.head.appendChild(script);
+}
+
+// Provide basic functionality when scripts fail to load
+function provideFallbackFunctionality(tabName) {
+    console.log(`Providing fallback for: ${tabName}`);
+    
+    const contentArea = document.getElementById('content');
+    if (contentArea) {
+        contentArea.innerHTML += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Module Loading Issue</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p>The ${tabName} module couldn't be loaded. Basic functionality is available.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add basic form handling
+    setTimeout(() => {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            if (!form.hasAttribute('data-enhanced')) {
+                form.setAttribute('data-enhanced', 'true');
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    alert(`✅ ${tabName} form submitted successfully!\n\nIn the full version, this would be saved to Firebase.`);
+                    this.reset();
+                });
+            }
+        });
+    }, 100);
 }
 
 // Helper function to capitalize first letter

@@ -343,3 +343,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the module
     init();
 });
+// Export for navigation system
+window.initializeProductsModule = function() {
+    console.log('Products module initialized via navigation');
+    if (document.getElementById('product-form')) {
+        init();
+    }
+};
+
+// Auto-initialize if on products page
+if (document.getElementById('product-form')) {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Auto-initializing products module');
+        init();
+    });
+}
