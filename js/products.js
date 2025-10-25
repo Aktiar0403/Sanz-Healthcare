@@ -1,57 +1,60 @@
-// Products Management Module - DEBUG VERSION
-console.log('🎯 PRODUCTS MODULE LOADED - DEBUG MODE');
+// Products Management Module - FALLBACK VERSION
+console.log('🎯 PRODUCTS MODULE LOADED - FALLBACK MODE');
 
-// Export for navigation system
 window.initializeProductsModule = function() {
     console.log('🚀 Products module initialized via navigation');
     
-    // Check if we're on products page
-    const productForm = document.getElementById('product-form');
-    if (!productForm) {
-        console.log('❌ Not on products page');
-        return;
-    }
-    
-    console.log('✅ On products page, setting up basic functionality');
-    
-    // Basic form handling without Firebase
-    productForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const productName = document.getElementById('product-name').value;
-        const mrp = document.getElementById('mrp').value;
-        
-        console.log('📦 Product form submitted:', { productName, mrp });
-        alert(`Product "${productName}" with MRP ₹${mrp} would be saved to Firebase in production!`);
-        
-        this.reset();
-    });
-    
-    // MRP calculation
-    const mrpInput = document.getElementById('mrp');
-    if (mrpInput) {
-        mrpInput.addEventListener('input', function() {
-            const mrp = parseFloat(this.value) || 0;
-            if (mrp > 0) {
-                const retailerPrice = mrp * 0.8;
-                const stockistPrice = retailerPrice * 0.9;
+    const contentArea = document.getElementById('content');
+    if (contentArea) {
+        contentArea.innerHTML = `
+            <div class="p-6">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-lg font-medium text-blue-800">Products Module Loaded</h3>
+                            <div class="mt-2 text-blue-700">
+                                <p>Basic products functionality is working!</p>
+                                <p class="text-sm mt-1">Firebase integration will work once configured.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                const retailerInput = document.getElementById('retailer-price');
-                const stockistInput = document.getElementById('stockist-price');
-                
-                if (retailerInput) retailerInput.value = retailerPrice.toFixed(2);
-                if (stockistInput) stockistInput.value = stockistPrice.toFixed(2);
-            }
-        });
+                <div class="bg-white rounded-lg shadow-sm border p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Products Management</h2>
+                    
+                    <form id="product-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                            <input type="text" id="product-name" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enter product name" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">MRP (₹)</label>
+                            <input type="number" id="mrp" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Enter MRP" min="0" step="0.01" required>
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                            Save Product
+                        </button>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        // Add form handling
+        const form = document.getElementById('product-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const productName = document.getElementById('product-name').value;
+                const mrp = document.getElementById('mrp').value;
+                alert(`✅ Product "${productName}" saved!\nMRP: ₹${mrp}\n\nIn production, this would save to Firebase.`);
+                this.reset();
+            });
+        }
     }
-    
-    console.log('✅ Products module setup complete');
 };
 
-// Auto-initialize if directly on products page
-if (document.getElementById('product-form')) {
-    console.log('🔍 Auto-initializing products module (direct access)');
-    document.addEventListener('DOMContentLoaded', function() {
-        window.initializeProductsModule();
-    });
-}
+console.log('✅ Products module ready');
