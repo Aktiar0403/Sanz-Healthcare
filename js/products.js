@@ -1,424 +1,57 @@
-// Products Management Module - Enhanced with error handling
-console.log('Products module loading...');
+// Products Management Module - DEBUG VERSION
+console.log('🎯 PRODUCTS MODULE LOADED - DEBUG MODE');
 
-// Wait for Firebase to be available
-function waitForFirebase() {
-    return new Promise((resolve) => {
-        const checkFirebase = () => {
-            if (typeof firebase !== 'undefined' && window.db) {
-                console.log('Firebase is available');
-                resolve();
-            } else {
-                console.log('Waiting for Firebase...');
-                setTimeout(checkFirebase, 100);
-            }
-        };
-        checkFirebase();
-    });
-}
-
-// Main initialization function
-async function initializeProducts() {
-    console.log('Initializing products module...');
+// Export for navigation system
+window.initializeProductsModule = function() {
+    console.log('🚀 Products module initialized via navigation');
     
-    try {
-        // Wait for Firebase to be ready
-        await waitForFirebase();
+    // Check if we're on products page
+    const productForm = document.getElementById('product-form');
+    if (!productForm) {
+        console.log('❌ Not on products page');
+        return;
+    }
+    
+    console.log('✅ On products page, setting up basic functionality');
+    
+    // Basic form handling without Firebase
+    productForm.addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        // DOM Elements
-        const productForm = document.getElementById('product-form');
+        const productName = document.getElementById('product-name').value;
+        const mrp = document.getElementById('mrp').value;
         
-        // Check if we're on the products page
-        if (!productForm) {
-            console.log('Not on products page, skipping initialization');
-            return;
-        }
+        console.log('📦 Product form submitted:', { productName, mrp });
+        alert(`Product "${productName}" with MRP ₹${mrp} would be saved to Firebase in production!`);
         
-        console.log('Setting up products module on products page');
-        
-        // Your existing DOM elements and functions here...
-        const productNameInput = document.getElementById('product-name');
-        const compositionInput = document.getElementById('composition');
-        const mrpInput = document.getElementById('mrp');
-        const retailerPriceInput = document.getElementById('retailer-price');
-        const stockistPriceInput = document.getElementById('stockist-price');
-        const gstInput = document.getElementById('gst');
-        const offerInput = document.getElementById('offer');
-        const bonusNotesInput = document.getElementById('bonus-notes');
-        const saveProductBtn = document.getElementById('save-product');
-        const resetFormBtn = document.getElementById('reset-form');
-        const cancelEditBtn = document.getElementById('cancel-edit');
-        const searchInput = document.getElementById('search-product');
-        const productsTableBody = document.getElementById('products-table-body');
-        const formTitle = document.getElementById('form-title');
-        
-        // Error message elements
-        const nameError = document.getElementById('name-error');
-        const mrpError = document.getElementById('mrp-error');
-        
-        // State variables
-        let currentProductId = null;
-        let isEditing = false;
-        let products = [];
-        
-        // Initialize the module
-        function init() {
-            console.log('Initializing products functionality...');
-            setupEventListeners();
-            loadProducts();
-        }
-        
-        // Set up event listeners
-        function setupEventListeners() {
-            // Form submission
-            productForm.addEventListener('submit', handleFormSubmit);
-            
-            // MRP input change - calculate prices
-            mrpInput.addEventListener('input', calculatePrices);
-            
-            // Reset form
-            if (resetFormBtn) {
-                resetFormBtn.addEventListener('click', resetForm);
-            }
-            
-            // Cancel edit
-            if (cancelEditBtn) {
-                cancelEditBtn.addEventListener('click', cancelEdit);
-            }
-            
-            // Search functionality
-            if (searchInput) {
-                searchInput.addEventListener('input', filterProducts);
-            }
-            
-            console.log('Product event listeners set up');
-        }
-        
-        // Calculate retailer and stockist prices based on MRP
-        function calculatePrices() {
-            const mrp = parseFloat(mrpInput.value) || 0;
-            
+        this.reset();
+    });
+    
+    // MRP calculation
+    const mrpInput = document.getElementById('mrp');
+    if (mrpInput) {
+        mrpInput.addEventListener('input', function() {
+            const mrp = parseFloat(this.value) || 0;
             if (mrp > 0) {
                 const retailerPrice = mrp * 0.8;
                 const stockistPrice = retailerPrice * 0.9;
                 
-                if (retailerPriceInput) retailerPriceInput.value = retailerPrice.toFixed(2);
-                if (stockistPriceInput) stockistPriceInput.value = stockistPrice.toFixed(2);
-            } else {
-                if (retailerPriceInput) retailerPriceInput.value = '';
-                if (stockistPriceInput) stockistPriceInput.value = '';
-            }
-        }
-        
-        // Handle form submission
-        function handleFormSubmit(e) {
-            e.preventDefault();
-            
-            // Validate form
-            if (!validateForm()) {
-                return;
-            }
-            
-            // Get form data
-            const productData = {
-                name: productNameInput.value.trim(),
-                composition: compositionInput.value.trim(),
-                mrp: parseFloat(mrpInput.value),
-                retailerPrice: parseFloat(retailerPriceInput.value),
-                stockistPrice: parseFloat(stockistPriceInput.value),
-                gst: gstInput.value ? parseFloat(gstInput.value) : 0,
-                offer: offerInput.value.trim(),
-                bonusNotes: bonusNotesInput.value.trim(),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            // Add createdAt for new products
-            if (!isEditing) {
-                productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            }
-            
-            // Save to Firestore
-            saveProduct(productData);
-        }
-        
-        // Validate form inputs
-        function validateForm() {
-            let isValid = true;
-            
-            // Clear previous errors
-            if (nameError) nameError.textContent = '';
-            if (mrpError) mrpError.textContent = '';
-            
-            // Validate product name
-            if (!productNameInput.value.trim()) {
-                if (nameError) nameError.textContent = 'Product name is required';
-                isValid = false;
-            }
-            
-            // Validate MRP
-            if (!mrpInput.value || parseFloat(mrpInput.value) <= 0) {
-                if (mrpError) mrpError.textContent = 'Valid MRP is required';
-                isValid = false;
-            }
-            
-            return isValid;
-        }
-        
-        // Save product to Firestore
-        function saveProduct(productData) {
-            if (!saveProductBtn) return;
-            
-            saveProductBtn.disabled = true;
-            saveProductBtn.textContent = 'Saving...';
-            
-            try {
-                if (isEditing && currentProductId) {
-                    // Update existing product
-                    db.collection('products').doc(currentProductId).update(productData)
-                        .then(() => {
-                            showMessage('Product updated successfully', 'success');
-                            resetForm();
-                        })
-                        .catch(error => {
-                            console.error('Error updating product: ', error);
-                            showMessage('Error updating product: ' + error.message, 'error');
-                        })
-                        .finally(() => {
-                            saveProductBtn.disabled = false;
-                            saveProductBtn.textContent = 'Update Product';
-                        });
-                } else {
-                    // Add new product
-                    db.collection('products').add(productData)
-                        .then(() => {
-                            showMessage('Product added successfully', 'success');
-                            resetForm();
-                        })
-                        .catch(error => {
-                            console.error('Error adding product: ', error);
-                            showMessage('Error adding product: ' + error.message, 'error');
-                        })
-                        .finally(() => {
-                            saveProductBtn.disabled = false;
-                            saveProductBtn.textContent = 'Save Product';
-                        });
-                }
-            } catch (error) {
-                console.error('Error in saveProduct: ', error);
-                showMessage('Error: ' + error.message, 'error');
-                if (saveProductBtn) {
-                    saveProductBtn.disabled = false;
-                    saveProductBtn.textContent = isEditing ? 'Update Product' : 'Save Product';
-                }
-            }
-        }
-        
-        // Load products from Firestore with real-time updates
-        function loadProducts() {
-            try {
-                if (!db) {
-                    console.error('Firestore not available');
-                    return;
-                }
+                const retailerInput = document.getElementById('retailer-price');
+                const stockistInput = document.getElementById('stockist-price');
                 
-                db.collection('products').orderBy('name').onSnapshot(snapshot => {
-                    products = [];
-                    if (productsTableBody) {
-                        productsTableBody.innerHTML = '';
-                    }
-                    
-                    snapshot.forEach(doc => {
-                        const product = {
-                            id: doc.id,
-                            ...doc.data()
-                        };
-                        products.push(product);
-                        renderProductRow(product);
-                    });
-                    
-                    console.log(`Loaded ${products.length} products`);
-                }, error => {
-                    console.error('Error loading products: ', error);
-                    showMessage('Error loading products: ' + error.message, 'error');
-                });
-            } catch (error) {
-                console.error('Error in loadProducts: ', error);
-                showMessage('Error: ' + error.message, 'error');
+                if (retailerInput) retailerInput.value = retailerPrice.toFixed(2);
+                if (stockistInput) stockistInput.value = stockistPrice.toFixed(2);
             }
-        }
-        
-        // Render a product row in the table
-        function renderProductRow(product) {
-            if (!productsTableBody) return;
-            
-            const row = document.createElement('tr');
-            
-            // Add highlight class if product has an offer
-            if (product.offer) {
-                row.classList.add('offer-highlight');
-            }
-            
-            row.innerHTML = `
-                <td>${escapeHtml(product.name)}</td>
-                <td>${escapeHtml(product.composition || '-')}</td>
-                <td>${product.mrp ? product.mrp.toFixed(2) : '0.00'}</td>
-                <td>${product.retailerPrice ? product.retailerPrice.toFixed(2) : '0.00'}</td>
-                <td>${product.stockistPrice ? product.stockistPrice.toFixed(2) : '0.00'}</td>
-                <td>${product.gst || '0'}</td>
-                <td>${escapeHtml(product.offer || '-')}</td>
-                <td class="action-cell">
-                    <button class="btn btn-primary btn-edit" data-id="${product.id}">Edit</button>
-                    <button class="btn btn-danger btn-delete" data-id="${product.id}">Delete</button>
-                </td>
-            `;
-            
-            productsTableBody.appendChild(row);
-            
-            // Add event listeners to the buttons
-            row.querySelector('.btn-edit').addEventListener('click', () => editProduct(product.id));
-            row.querySelector('.btn-delete').addEventListener('click', () => deleteProduct(product.id));
-        }
-        
-        // Edit product
-        function editProduct(productId) {
-            try {
-                db.collection('products').doc(productId).get()
-                    .then(doc => {
-                        if (doc.exists) {
-                            const product = doc.data();
-                            
-                            // Populate form with product data
-                            productNameInput.value = product.name || '';
-                            compositionInput.value = product.composition || '';
-                            mrpInput.value = product.mrp || '';
-                            calculatePrices(); // This will set retailer and stockist prices
-                            if (gstInput) gstInput.value = product.gst || '';
-                            if (offerInput) offerInput.value = product.offer || '';
-                            if (bonusNotesInput) bonusNotesInput.value = product.bonusNotes || '';
-                            
-                            // Update UI for editing mode
-                            currentProductId = productId;
-                            isEditing = true;
-                            if (formTitle) formTitle.textContent = 'Edit Product';
-                            if (saveProductBtn) saveProductBtn.textContent = 'Update Product';
-                            if (cancelEditBtn) cancelEditBtn.classList.remove('hidden');
-                            
-                            // Scroll to form
-                            const formSection = document.querySelector('.form-section');
-                            if (formSection) {
-                                formSection.scrollIntoView({ behavior: 'smooth' });
-                            }
-                        } else {
-                            showMessage('Product not found', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error getting product: ', error);
-                        showMessage('Error loading product: ' + error.message, 'error');
-                    });
-            } catch (error) {
-                console.error('Error in editProduct: ', error);
-                showMessage('Error: ' + error.message, 'error');
-            }
-        }
-        
-        // Delete product with confirmation
-        function deleteProduct(productId) {
-            if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-                try {
-                    db.collection('products').doc(productId).delete()
-                        .then(() => {
-                            showMessage('Product deleted successfully', 'success');
-                        })
-                        .catch(error => {
-                            console.error('Error deleting product: ', error);
-                            showMessage('Error deleting product: ' + error.message, 'error');
-                        });
-                } catch (error) {
-                    console.error('Error in deleteProduct: ', error);
-                    showMessage('Error: ' + error.message, 'error');
-                }
-            }
-        }
-        
-        // Cancel edit and reset form
-        function cancelEdit() {
-            resetForm();
-        }
-        
-        // Reset form to initial state
-        function resetForm() {
-            if (productForm) productForm.reset();
-            currentProductId = null;
-            isEditing = false;
-            if (formTitle) formTitle.textContent = 'Add New Product';
-            if (saveProductBtn) saveProductBtn.textContent = 'Save Product';
-            if (cancelEditBtn) cancelEditBtn.classList.add('hidden');
-            
-            // Clear error messages
-            if (nameError) nameError.textContent = '';
-            if (mrpError) mrpError.textContent = '';
-            
-            // Clear calculated prices
-            if (retailerPriceInput) retailerPriceInput.value = '';
-            if (stockistPriceInput) stockistPriceInput.value = '';
-        }
-        
-        // Filter products by name
-        function filterProducts() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const rows = productsTableBody.querySelectorAll('tr');
-            
-            rows.forEach(row => {
-                const productName = row.cells[0].textContent.toLowerCase();
-                if (productName.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-        
-        // Show message to user
-        function showMessage(message, type) {
-            // Simple alert for now - you can enhance this with toast notifications
-            if (type === 'error') {
-                alert('Error: ' + message);
-            } else {
-                alert(message);
-            }
-        }
-        
-        // Escape HTML to prevent XSS
-        function escapeHtml(unsafe) {
-            if (unsafe === null || unsafe === undefined) return '';
-            return unsafe
-                .toString()
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-        
-        // Start the initialization
-        init();
-        
-    } catch (error) {
-        console.error('Error initializing products module:', error);
-        showMessage('Error initializing products: ' + error.message, 'error');
+        });
     }
-}
+    
+    console.log('✅ Products module setup complete');
+};
 
-// Export for navigation system
-window.initializeProductsModule = initializeProducts;
-
-// Auto-initialize if already on products page
+// Auto-initialize if directly on products page
 if (document.getElementById('product-form')) {
-    console.log('Auto-initializing products module (direct access)');
+    console.log('🔍 Auto-initializing products module (direct access)');
     document.addEventListener('DOMContentLoaded', function() {
-        initializeProducts();
+        window.initializeProductsModule();
     });
 }
-
-console.log('Products module loaded successfully');
