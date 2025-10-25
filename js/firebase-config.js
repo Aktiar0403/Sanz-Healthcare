@@ -9,26 +9,24 @@ const firebaseConfig = {
   measurementId: "G-HDKXN3LZ7P"
 };
 
-// Initialize Firebase
+// Initialize Firebase only if not already initialized
 try {
   if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
+    console.log('🔥 Firebase initialized successfully');
   }
+  
+  // Initialize services
+  window.db = firebase.firestore();
+  window.auth = firebase.auth();
+  
+  console.log('✅ Firebase services ready');
+  
 } catch (error) {
-  console.error('Firebase initialization error:', error);
+  console.error('❌ Firebase initialization error:', error);
 }
 
-// Initialize Firebase services
-const db = firebase.firestore();
-const auth = firebase.auth();
-
-// Enable offline persistence with error handling
-db.enablePersistence()
-  .catch((err) => {
-    console.log("Firebase persistence error: ", err);
-    // Continue without offline persistence
-  });
-
-// Make Firebase instances globally available
-window.db = db;
-window.auth = auth;
+// Make sure Firebase is globally available
+if (typeof firebase !== 'undefined') {
+  window.firebase = firebase;
+}

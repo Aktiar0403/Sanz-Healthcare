@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sanj Healthcare - Dashboard</title>
     
-    <!-- Use optimized Tailwind CDN with plugins -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <!-- Use basic Tailwind CDN without plugins -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -16,9 +16,6 @@
     
     <!-- Favicon as SVG -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
-    
-    <!-- Manifest -->
-    <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-gray-50">
     <!-- App Container -->
@@ -98,7 +95,7 @@
             <!-- Content Area -->
             <main class="flex-1 overflow-y-auto p-6">
                 <div id="content">
-                    <!-- Dashboard Content -->
+                    <!-- Dashboard Content will be loaded here -->
                     <div class="welcome-message">
                         <div class="bg-white rounded-lg shadow-sm border p-8 text-center">
                             <i class="fas fa-heartbeat text-6xl text-blue-600 mb-4"></i>
@@ -150,34 +147,6 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                                <div class="bg-white border rounded-lg p-6">
-                                    <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
-                                    <div class="space-y-3">
-                                        <button class="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                            <i class="fas fa-plus-circle text-blue-600 mr-3"></i>
-                                            Add New Product
-                                        </button>
-                                        <button class="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                            <i class="fas fa-cart-plus text-green-600 mr-3"></i>
-                                            Record Sale
-                                        </button>
-                                        <button class="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                            <i class="fas fa-file-invoice-dollar text-purple-600 mr-3"></i>
-                                            Add Expense
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div class="bg-white border rounded-lg p-6">
-                                    <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
-                                    <div class="space-y-3 text-sm text-gray-600">
-                                        <p>No recent activity</p>
-                                        <p class="text-xs text-gray-400">Activities will appear here as you use the system</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -185,7 +154,7 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK - Use compatible versions -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -202,6 +171,11 @@
             year: 'numeric',
             month: 'long',
             day: 'numeric'
+        });
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Sanj Healthcare App initialized');
         });
     </script>
 </body>
