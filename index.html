@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sanj Healthcare - Dashboard</title>
     
-    <!-- Use basic Tailwind CDN without plugins -->
+    <!-- Use basic Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Font Awesome -->
@@ -16,9 +16,6 @@
     
     <!-- Favicon as SVG -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
-        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 </head>
 <body class="bg-gray-50">
     <!-- App Container -->
@@ -98,7 +95,7 @@
             <!-- Content Area -->
             <main class="flex-1 overflow-y-auto p-6">
                 <div id="content">
-                    <!-- Dashboard Content will be loaded here -->
+                    <!-- Dashboard Content -->
                     <div class="welcome-message">
                         <div class="bg-white rounded-lg shadow-sm border p-8 text-center">
                             <i class="fas fa-heartbeat text-6xl text-blue-600 mb-4"></i>
@@ -106,45 +103,45 @@
                             <p class="text-gray-600 text-lg mb-8">Select a tab from the sidebar to manage your healthcare business operations.</p>
                             
                             <div class="dashboard-stats grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                                <div class="stat-card bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                                <div class="stat-card bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <h3 class="text-lg font-semibold">Products</h3>
-                                            <p class="stat-value text-3xl font-bold">0</p>
-                                            <p class="stat-label text-blue-100">Total Products</p>
+                                            <p class="text-3xl font-bold mt-2">0</p>
+                                            <p class="text-blue-100 text-sm mt-1">Total Products</p>
                                         </div>
                                         <i class="fas fa-pills text-3xl opacity-80"></i>
                                     </div>
                                 </div>
                                 
-                                <div class="stat-card bg-gradient-to-r from-green-500 to-green-600 text-white">
+                                <div class="stat-card bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <h3 class="text-lg font-semibold">Stock</h3>
-                                            <p class="stat-value text-3xl font-bold">0</p>
-                                            <p class="stat-label text-green-100">Items in Stock</p>
+                                            <p class="text-3xl font-bold mt-2">0</p>
+                                            <p class="text-green-100 text-sm mt-1">Items in Stock</p>
                                         </div>
                                         <i class="fas fa-boxes text-3xl opacity-80"></i>
                                     </div>
                                 </div>
                                 
-                                <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                                <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <h3 class="text-lg font-semibold">Customers</h3>
-                                            <p class="stat-value text-3xl font-bold">0</p>
-                                            <p class="stat-label text-purple-100">Total Customers</p>
+                                            <p class="text-3xl font-bold mt-2">0</p>
+                                            <p class="text-purple-100 text-sm mt-1">Total Customers</p>
                                         </div>
                                         <i class="fas fa-users text-3xl opacity-80"></i>
                                     </div>
                                 </div>
                                 
-                                <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                                <div class="stat-card bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-lg">
                                     <div class="flex items-center justify-between">
                                         <div>
                                             <h3 class="text-lg font-semibold">Revenue</h3>
-                                            <p class="stat-value text-3xl font-bold">₹0</p>
-                                            <p class="stat-label text-orange-100">This Month</p>
+                                            <p class="text-3xl font-bold mt-2">₹0</p>
+                                            <p class="text-orange-100 text-sm mt-1">This Month</p>
                                         </div>
                                         <i class="fas fa-rupee-sign text-3xl opacity-80"></i>
                                     </div>
@@ -157,13 +154,104 @@
         </div>
     </div>
 
-    <!-- Firebase SDK - Use compatible versions -->
+    <!-- Firebase SDK with fallback handling -->
+    <script>
+        // Load Firebase with error handling
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
 
+        // Load Firebase SDKs sequentially
+        async function loadFirebase() {
+            try {
+                console.log('🔥 Loading Firebase SDK...');
+                
+                await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
+                console.log('✅ firebase-app.js loaded');
+                
+                await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js');
+                console.log('✅ firebase-firestore.js loaded');
+                
+                await loadScript('https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js');
+                console.log('✅ firebase-auth.js loaded');
+                
+                // Initialize Firebase
+                initializeApp();
+                
+            } catch (error) {
+                console.error('💥 Failed to load Firebase SDK:', error);
+                // Continue without Firebase
+                initializeAppWithoutFirebase();
+            }
+        }
+
+        // Initialize with Firebase
+        function initializeApp() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyARxCkcyB7ts0EWoq9x9G31xhIN6fpR9kk",
+                authDomain: "sanj-healthcare-77e02.firebaseapp.com",
+                projectId: "sanj-healthcare-77e02",
+                storageBucket: "sanj-healthcare-77e02.firebasestorage.app",
+                messagingSenderId: "710696156355",
+                appId: "1:710696156355:web:13bcee177f46e3aebc7676",
+                measurementId: "G-HDKXN3LZ7P"
+            };
+
+            try {
+                // Initialize Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('🎉 Firebase initialized successfully');
+                }
+
+                // Initialize services
+                window.db = firebase.firestore();
+                window.auth = firebase.auth();
+                window.firebase = firebase;
+
+                console.log('✅ All Firebase services ready');
+                
+            } catch (error) {
+                console.error('❌ Firebase initialization error:', error);
+                initializeAppWithoutFirebase();
+            }
+        }
+
+        // Initialize without Firebase (fallback)
+        function initializeAppWithoutFirebase() {
+            console.log('🚨 Running in offline mode - Firebase not available');
+            window.db = null;
+            window.auth = null;
+            window.firebase = null;
+            
+            // Show warning
+            const header = document.querySelector('header');
+            if (header) {
+                const warning = document.createElement('div');
+                warning.className = 'bg-yellow-50 border border-yellow-200 p-4 text-center';
+                warning.innerHTML = `
+                    <div class="flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+                        <span class="text-yellow-800">Running in offline mode. Some features may be limited.</span>
+                    </div>
+                `;
+                header.parentNode.insertBefore(warning, header.nextSibling);
+            }
+        }
+
+        // Start loading Firebase
+        loadFirebase();
+    </script>
 
     <!-- App Scripts -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
     <script src="js/navigation.js"></script>
+    <script src="js/auth.js"></script>
 
     <script>
         // Set current date
@@ -176,7 +264,7 @@
         
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Sanj Healthcare App initialized');
+            console.log('🏥 Sanj Healthcare App initialized');
         });
     </script>
 </body>
